@@ -1,0 +1,126 @@
+{# app/templates/admin/product_form.html #}
+{% extends 'base.html' %}
+{% import "macros/_form_helpers.html" as form_helpers %}
+
+{% block title %}{% if product %}Edit Product{% else %}Add New Product{% endif %}{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">{% if product %}Edit Product: {{ product.name }}{% else %}Add New Product{% endif %}</h1>
+
+{# Pesan flash secara umum (misalnya 'Product added successfully!') #}
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<form method="POST" enctype="multipart/form-data" action="{% if product %}{{ url_for('admin.edit_product', product_id=product.id) }}{% else %}{{ url_for('admin.add_product') }}{% endif %}">
+    {{ form.hidden_tag() }}
+
+    {# Render setiap field menggunakan macro form_helpers.render_field #}
+    {{ form_helpers.render_field(form.name) }}
+    {{ form_helpers.render_field(form.category_id) }} 
+    {{ form_helpers.render_field(form.description) }}
+    {{ form_helpers.render_field(form.price) }}
+    {{ form_helpers.render_field(form.stock) }}
+    {{ form_helpers.render_field(form.weight) }}
+    
+    {# --- BAGIAN UNTUK UPLOAD GAMBAR BARU --- #}
+    <hr>
+    <h3>Product Images</h3>
+    <div class="mb-3">
+        {{ form.thumbnail_upload.label(class="form-label") }}
+        {{ form.thumbnail_upload(class="form-control", accept="image/*") }}
+        {% if form.thumbnail_upload.errors %}
+            <div class="invalid-feedback d-block">
+                {% for error in form.thumbnail_upload.errors %}
+                    <span>{{ error }}</span>
+                {% endfor %}
+            </div>
+        {% endif %}
+        <small class="form-text text-muted">Upload a new image to be the main thumbnail. If not provided, it will use the first image from gallery or existing thumbnail.</small>
+    </div>
+
+    <div class="mb-3">
+        {{ form.gallery_uploads.label(class="form-label") }}
+        {{ form.gallery_uploads(class="form-control", multiple=true, accept="image/*") }}
+        {% if form.gallery_uploads.errors %}
+            <div class="invalid-feedback d-block">
+                {% for error in form.gallery_uploads.errors %}
+                    <span>{{ error }}</span>
+                {% endfor %}
+            </div>
+        {% endif %}
+        <small class="form-text text-muted">Upload multiple additional images for the product gallery.</small>
+    </div>
+    {# --- AKHIR BAGIAN UPLOAD GAMBAR BARU --- #}
+
+    {# --- BAGIAN UNTUK MENGELOLA GAMBAR YANG SUDAH ADA (HANYA MODE EDIT) --- #}
+    {% if product and product.images %}
+        <h4 class="mt-4">Existing Images</h4>
+        <div class="row row-cols-1 row-cols-md-3 g-4 mb-4">
+            {% for image in product.images %}
+            <div class="col">
+                <div class="card h-100">
+                    <img src="{{ url_for('static', filename='uploads/products/' + image.name) }}" class="card-img-top" alt="Product Image" style="height: 150px; object-fit: cover;">
+                    <div class="card-body">
+                        <p class="card-text">
+                            {% if image.is_thumbnail %}
+                                <span class="badge bg-primary">Current Thumbnail</span>
+                            {% else %}
+                                <label class="form-check-label">
+                                    <input type="radio" name="set_as_thumbnail_id" value="{{ image.id }}" class="form-check-input"> Set as Thumbnail
+                                </label>
+                            {% endif %}
+                        </p>
+                        <button type="button" class="btn btn-danger btn-sm mt-2 delete-image-btn" data-image-id="{{ image.id }}" data-image-name="{{ image.name }}">Delete</button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {# Hidden input untuk ID gambar yang akan dihapus #}
+        <input type="hidden" name="delete_image_ids" id="delete_image_ids_input">
+    {% endif %}
+    {# --- AKHIR BAGIAN MENGELOLA GAMBAR --- #}
+
+    <button type="submit" class="btn btn-success">{% if product %}Update Product{% else %}Add Product{% endif %}</button>
+    <a href="{{ url_for('admin.product_management') }}" class="btn btn-secondary">Cancel</a>
+</form>
+
+{# JavaScript untuk konfirmasi delete dan mengumpulkan ID gambar yang dihapus #}
+{% block scripts %}
+    {{ super() }} {# Mempertahankan script dari base.html #}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const deleteButtons = document.querySelectorAll('.delete-image-btn');
+            const deleteImageIds = new Set(); // Menggunakan Set untuk menghindari duplikasi
+
+            deleteButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const imageId = this.dataset.imageId;
+                    const imageName = this.dataset.imageName;
+                    
+                    if (confirm(`Are you sure you want to delete image "${imageName}"?`)) {
+                        deleteImageIds.add(imageId); // Tambahkan ID ke Set
+                        this.closest('.col').remove(); // Hapus tampilan kartu gambar dari DOM
+
+                        // Update hidden input field
+                        document.getElementById('delete_image_ids_input').value = Array.from(deleteImageIds).join(',');
+                    }
+                });
+            });
+
+            // Perbarui nilai hidden input saat form disubmit (jika ada perubahan yang tidak terdeteksi click)
+            const productForm = document.querySelector('form');
+            if (productForm) {
+                productForm.addEventListener('submit', function() {
+                    document.getElementById('delete_image_ids_input').value = Array.from(deleteImageIds).join(',');
+                });
+            }
+        });
+    </script>
+{% endblock %}
+{% endblock %}

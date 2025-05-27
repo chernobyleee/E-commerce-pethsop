@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+
+{% block title %}Pembayaran - {{ order.invoice_number }}{% endblock %}
+
+{% block head %}
+{# URL snap.js harus dinamis tergantung mode production/sandbox #}
+<script type="text/javascript"
+        src="{{ midtrans_service.snap_js_url }}" {# Mengambil URL dari service #}
+        data-client-key="{{ client_key }}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header text-center">
+                <h2>Pembayaran Pesanan #{{ order.invoice_number }}</h2>
+            </div>
+            <div class="card-body text-center">
+                <p class="lead">Total yang harus dibayar:</p>
+                <h3>Rp {{ '{:,.0f}'.format(order.total) }}</h3>
+                <hr>
+                
+                {# Tombol "Bayar Sekarang" akan selalu ada di sini selama status order adalah pending/pending_payment #}
+                <div id="payment-section">
+                    <p>Silakan selesaikan pembayaran menggunakan Snap Pop-up:</p>
+                    <button class="btn btn-primary btn-lg" id="pay-button">Bayar Sekarang</button>
+                    <p class="mt-3 text-muted">Anda akan diarahkan ke halaman pembayaran Midtrans.</p>
+                </div>
+                
+                {# Pesan error jika gagal mendapatkan token (opsional, bisa juga ditangani di JS saja) #}
+                <div id="error-message" class="alert alert-danger" role="alert" style="display: none;">
+                    Terjadi kesalahan saat membuat token pembayaran. Silakan coba lagi nanti atau hubungi customer service.
+                </div>
+            </div>
+        </div>
+        <div class="text-center mt-3">
+            <a href="{{ url_for('orders.order_detail', order_id=order.id) }}" class="btn btn-secondary">Kembali ke Detail Pesanan</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function() {
+        var payButton = document.getElementById('pay-button');
+        var errorMessageDiv = document.getElementById('error-message');
+        var orderId = "{{ order.id }}"; // Ambil ID order dari Flask
+
+        if (payButton) {
+            payButton.addEventListener('click', function () {
+                // Sembunyikan tombol dan tampilkan loading state
+                payButton.disabled = true;
+                payButton.textContent = 'Memuat Pembayaran...';
+                errorMessageDiv.style.display = 'none'; // Sembunyikan pesan error sebelumnya jika ada
+
+                // Panggil endpoint API untuk mendapatkan snap_token yang baru
+                fetch("{{ url_for('orders.api_get_snap_token', order_id=order.id) }}")
+                    .then(response => {
+                        if (!response.ok) {
+                            // Tangani respons HTTP error (misalnya 404, 500)
+                            throw new Error('Network response was not ok: ' + response.statusText);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.snap_token) {
+                            // Jika token berhasil didapat, panggil Snap Pop-up
+                            snap.pay(data.snap_token, {
+                                onSuccess: function(result){
+                                    alert("Pembayaran berhasil!");
+                                    console.log('Payment Success:', result);
+                                    window.location.href = "{{ url_for('orders.order_detail', order_id=order.id) }}"; 
+                                },
+                                onPending: function(result){
+                                    alert("Menunggu pembayaran Anda!");
+                                    console.log('Payment Pending:', result);
+                                    window.location.href = "{{ url_for('orders.order_detail', order_id=order.id) }}";
+                                },
+                                onError: function(result){
+                                    alert("Pembayaran gagal!");
+                                    console.log('Payment Error:', result);
+                                    window.location.href = "{{ url_for('orders.order_detail', order_id=order.id) }}";
+                                },
+                                onClose: function(){
+                                    // Ini adalah bagian penting untuk masalah Anda
+                                    alert('Anda menutup pop-up pembayaran tanpa menyelesaikan transaksi. Klik "Bayar Sekarang" lagi untuk melanjutkan.');
+                                    console.log('Payment Closed by user.');
+                                    // Aktifkan kembali tombol agar pengguna bisa mencoba lagi
+                                    payButton.disabled = false;
+                                    payButton.textContent = 'Bayar Sekarang';
+                                }
+                            });
+                        } else {
+                            // Jika respons tidak mengandung snap_token (misalnya, error dari server)
+                            alert("Gagal mendapatkan token pembayaran. Silakan coba lagi.");
+                            console.error("No snap_token in response:", data);
+                            errorMessageDiv.style.display = 'block'; // Tampilkan pesan error
+                            payButton.disabled = false;
+                            payButton.textContent = 'Bayar Sekarang';
+                        }
+                    })
+                    .catch(error => {
+                        // Tangani error jaringan atau error saat parsing JSON
+                        console.error('Error fetching snap token:', error);
+                        alert("Terjadi kesalahan saat mengambil token pembayaran. Silakan periksa konsol.");
+                        errorMessageDiv.textContent = "Terjadi kesalahan: " + error.message + ". Silakan coba lagi.";
+                        errorMessageDiv.style.display = 'block'; // Tampilkan pesan error
+                        payButton.disabled = false;
+                        payButton.textContent = 'Bayar Sekarang';
+                    });
+            });
+        }
+    });
+</script>
+{% endblock %}

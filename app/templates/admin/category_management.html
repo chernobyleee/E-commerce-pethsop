@@ -1,0 +1,72 @@
+{# app/templates/admin/category_management.html #}
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Manage Categories</h1>
+
+{% include '_messages.html' %}
+
+<div class="d-flex justify-content-between mb-3">
+    <a href="{{ url_for('admin.add_category') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Add New Category</a>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Slug</th>
+                <th>Products Count</th>
+                <th>Created At</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for category in categories.items %}
+            <tr>
+                <td>{{ category.name }}</td>
+                <td>{{ category.slug }}</td>
+                <td>{{ category.products|length }}</td>
+                <td>{{ category.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>
+                    <a href="{{ url_for('admin.edit_category', category_id=category.id) }}" class="btn btn-sm btn-warning me-2"><i class="fas fa-edit"></i> Edit</a>
+                    <form action="{{ url_for('admin.delete_category', category_id=category.id) }}" method="POST" style="display:inline-block;">
+                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this category? All products under this category will have their category unset.')"><i class="fas fa-trash"></i> Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5">No categories found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{# Pagination links #}
+<nav aria-label="Page navigation example">
+    <ul class="pagination justify-content-center">
+        {% if categories.has_prev %}
+        <li class="page-item"><a class="page-link" href="{{ url_for('admin.category_management', page=categories.prev_num) }}">Previous</a></li>
+        {% endif %}
+        {% for page_num in categories.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+        {% if page_num %}
+            {% if categories.page == page_num %}
+            <li class="page-item active"><a class="page-link" href="#">{{ page_num }}</a></li>
+            {% else %}
+            <li class="page-item"><a class="page-link" href="{{ url_for('admin.category_management', page=page_num) }}">{{ page_num }}</a></li>
+            {% endif %}
+        {% else %}
+        <li class="page-item disabled"><a class="page-link" href="#">...</a></li>
+        {% endif %}
+        {% endfor %}
+        {% if categories.has_next %}
+        <li class="page-item"><a class="page-link" href="{{ url_for('admin.category_management', page=categories.next_num) }}">Next</a></li>
+        {% endif %}
+    </ul>
+</nav>
+
+{% endblock %}

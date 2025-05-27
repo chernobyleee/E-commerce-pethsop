@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ product.name }}{% endblock %}
+
+{% block content %}
+<div class="row mt-4">
+    <div class="col-md-6">
+        {# Bootstrap Carousel for Product Images #}
+        <div id="productCarousel" class="carousel slide" data-bs-ride="carousel">
+            <div class="carousel-inner">
+                {% if all_images %}
+                    {% for image in all_images %}
+                        <div class="carousel-item {% if loop.first %}active{% endif %}">
+                            {# Pastikan `image.name` adalah path URL gambar yang benar #}
+                            {# Misalnya, jika gambar disimpan di app/static/uploads/products/ #}
+                            <img src="{{ url_for('static', filename='uploads/products/' + image.name) }}" 
+                                 class="d-block w-100 img-fluid rounded" 
+                                 alt="{{ product.name }} Image {{ loop.index }}" 
+                                 style="max-height: 400px; object-fit: contain;"> {# 'contain' agar gambar tidak terpotong #}
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    {# Fallback jika tidak ada gambar sama sekali #}
+                    <div class="carousel-item active">
+                        <img src="https://via.placeholder.com/400?text=No+Image" class="d-block w-100 img-fluid rounded" alt="No Image">
+                    </div>
+                {% endif %}
+            </div>
+
+            {% if all_images|length > 1 %} {# Tampilkan kontrol jika ada lebih dari 1 gambar #}
+            <button class="carousel-control-prev" type="button" data-bs-target="#productCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Previous</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#productCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Next</span>
+            </button>
+            {% endif %}
+        </div>
+        {# End Bootstrap Carousel #}
+
+    </div>
+    <div class="col-md-6">
+        <h1>{{ product.name }}</h1>
+        {# Tampilkan Kategori di Detail Produk #}
+        {% if product.category %}
+            <p class="lead">Category: <a href="{{ url_for('products.product_list', category_id=product.category.id) }}">{{ product.category.name }}</a></p>
+        {% else %}
+            <p class="lead">Category: N/A</p>
+        {% endif %}
+        <p class="lead">Rp {{ '{:,.0f}'.format(product.price) }}</p>
+        <p><strong>Stock:</strong> {{ product.stock }}</p>
+        <p><strong>Weight:</strong> {{ product.weight }} grams</p>
+        <p>{{ product.description or 'No description available.' }}</p>
+
+        {# Kondisi untuk menyembunyikan tombol "Add to Cart" untuk admin #}
+        {% if current_user.is_authenticated and current_user.role == 'admin' %}
+            <div class="alert alert-info">Admin tidak dapat menambahkan produk ke keranjang.</div>
+        {% else %}
+            {% if product.stock > 0 %}
+            <form action="{{ url_for('cart.add_to_cart') }}" method="POST">
+                <input type="hidden" name="product_id" value="{{ product.id }}">
+                <div class="mb-3">
+                    <label for="quantity" class="form-label">Quantity:</label>
+                    <input type="number" class="form-control" id="quantity" name="quantity" value="1" min="1" max="{{ product.stock }}" required>
+                </div>
+                <button type="submit" class="btn btn-success"><i class="fas fa-cart-plus"></i> Add to Cart</button>
+            </form>
+            {% else %}
+            <div class="alert alert-warning">Out of Stock</div>
+            {% endif %}
+        {% endif %}
+    </div>
+</div>
+<a href="{{ url_for('products.product_list') }}" class="btn btn-secondary mt-4">Back to Products</a> 
+{% endblock %}

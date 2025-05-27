@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block title %}Shopping Cart{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Your Shopping Cart</h1>
+
+{% if cart_items %}
+<div class="table-responsive">
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Price</th>
+                <th>Quantity</th>
+                <th>Subtotal</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in cart_items %}
+            <tr>
+                <td>
+                    <div class="d-flex align-items-center">
+                        {% if item.product.image_url %}
+                        <img src="{{ item.product.image_url }}" alt="{{ item.product.name }}" class="img-thumbnail me-2" style="width: 50px; height: 50px; object-fit: cover;">
+                        {% endif %}
+                        {{ item.product.name }}
+                    </div>
+                </td>
+                <td>Rp {{ '{:,.0f}'.format(item.product.price) }}</td>
+                <td>
+                    {# Kondisi untuk menyembunyikan form update cart untuk admin #}
+                    {% if current_user.is_authenticated and current_user.role == 'admin' %}
+                        {{ item.quantity }}
+                    {% else %}
+                        <form action="{{ url_for('cart.update_cart') }}" method="POST" class="d-flex">
+                            <input type="hidden" name="cart_id" value="{{ item.id }}">
+                            <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="{{ item.product.stock }}" class="form-control w-auto me-2">
+                            <button type="submit" class="btn btn-sm btn-info" title="Update Quantity"><i class="fas fa-sync-alt"></i></button>
+                        </form>
+                    {% endif %}
+                </td>
+                <td>Rp {{ '{:,.0f}'.format(item.subtotal) }}</td>
+                <td>
+                    {# Kondisi untuk menyembunyikan tombol remove dari cart untuk admin #}
+                    {% if current_user.is_authenticated and current_user.role == 'admin' %}
+                        N/A
+                    {% else %}
+                        <form action="{{ url_for('cart.remove_from_cart', cart_id=item.id) }}" method="POST" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-danger" title="Remove Item"><i class="fas fa-trash-alt"></i></button>
+                        </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="row justify-content-end">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Cart Summary</h5>
+                <p class="card-text">Total Item Price: Rp {{ '{:,.0f}'.format(total_price) }}</p>
+                <p class="card-text">Total Weight: {{ '{:,.2f}'.format(total_weight) }} kg</p>
+                <hr>
+                {# Kondisi untuk menyembunyikan tombol "Proceed to Checkout" dan "Clear Cart" untuk admin #}
+                {% if current_user.is_authenticated and current_user.role == 'admin' %}
+                    <div class="alert alert-info text-center">Admin tidak dapat melanjutkan ke checkout.</div>
+                {% else %}
+                    <a href="{{ url_for('orders.checkout') }}" class="btn btn-success w-100">Proceed to Checkout</a>
+                    <form action="{{ url_for('cart.clear_cart') }}" method="POST" class="mt-2">
+                        <button type="submit" class="btn btn-outline-secondary w-100">Clear Cart</button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<div class="alert alert-info text-center" role="alert">
+    Your cart is empty. <a href="{{ url_for('main.home') }}">Start shopping!</a> {# Ubah products.product_list ke main.home jika itu rute utama #}
+</div>
+{% endif %}
+
+{% endblock %}

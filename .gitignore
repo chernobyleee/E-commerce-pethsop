@@ -1,0 +1,48 @@
+# Lingkungan Virtual Python
+.venv/
+venv/
+ENV/
+env/
+*.pyc
+__pycache__/
+*.egg-info/
+
+# File Konfigurasi Sensitif
+.env
+instance/ # Folder instance Flask, sering berisi config atau database SQLite
+
+# File spesifik IDE/Editor
+.idea/
+.vscode/
+*.project
+*.pydevproject
+*.sublime-workspace
+*.sublime-project
+
+# Log files
+*.log
+logs/
+
+# File Sistem Operasi
+.DS_Store
+Thumbs.db
+
+# Uploads Pengguna (jika ini adalah file yang diupload oleh pengguna saat aplikasi berjalan)
+# Sesuaikan path ini jika berbeda
+app/static/uploads/
+static/uploads/ # Jika Anda juga memiliki folder uploads di root static
+
+# File Database Lokal (jika menggunakan SQLite untuk development dan tidak ingin di-commit)
+*.sqlite3
+*.db
+local.db
+
+# File Build/Distribusi (jika ada)
+dist/
+build/
+*.manifest
+*.spec
+
+# File Sesi (jika disimpan di filesystem)
+.webassets-cache/
+flask_session/

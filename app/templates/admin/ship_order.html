@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>Update Pengiriman Pesanan #{{ order.invoice_number }}</h1>
+    <hr>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="card mb-3">
+        <div class="card-header">
+            Detail Pesanan
+        </div>
+        <div class="card-body">
+            <p><strong>Order ID:</strong> {{ order.id }}</p>
+            <p><strong>Invoice:</strong> {{ order.invoice_number }}</p>
+            <p><strong>Status:</strong> {{ order.status.capitalize() }}</p>
+            <p><strong>Total:</strong> Rp {{ '{:,.0f}'.format(order.total) }}</p>
+            <p><strong>Dibuat Pada:</strong> {{ order.created_at.strftime('%d-%m-%Y %H:%M') }}</p>
+            <p><strong>Penerima:</strong> {{ shipment.name }} ({{ shipment.phone }})</p>
+            <p><strong>Alamat:</strong> {{ shipment.address }}, {{ shipment.subdistrict }}, {{ shipment.district }}, {{ shipment.city }}, {{ shipment.province }}, {{ shipment.zip_code }}</p>
+            <p><strong>Kurir:</strong> {{ shipment.courier }} - {{ shipment.service }}</p>
+            <p><strong>Biaya Ongkir:</strong> Rp {{ '{:,.0f}'.format(shipment.cost) }}</p>
+            {% if shipment.tracking_number %}
+                <p><strong>Nomor Resi Saat Ini:</strong> {{ shipment.tracking_number }}</p>
+            {% else %}
+                <p><strong>Nomor Resi:</strong> Belum ada</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            Input Nomor Resi
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('admin.admin_ship_order', order_id=order.id) }}">
+                <div class="mb-3">
+                    <label for="tracking_number" class="form-label">Nomor Resi:</label>
+                    <input type="text" class="form-control" id="tracking_number" name="tracking_number" value="{{ shipment.tracking_number or '' }}" required>
+                </div>
+                <button type="submit" class="btn btn-primary mt-3">Simpan Nomor Resi & Kirim Pesanan</button>
+                <a href="{{ url_for('admin.admin_order_detail', order_id=order.id) }}" class="btn btn-secondary mt-3">Batal</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

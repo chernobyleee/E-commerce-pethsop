@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Orders{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Order Management</h1>
+
+{% if orders.items %}
+<div class="table-responsive">
+    <table class="table table-hover table-striped">
+        <thead>
+            <tr>
+                <th>Invoice</th>
+                <th>Customer</th>
+                <th>Total</th>
+                <th>Status</th>
+                <th>Tanggal Order</th>
+                <th>Tanggal Bayar</th>
+                <th>Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders.items %}
+            <tr>
+                <td>{{ order.invoice_number }}</td>
+                <td>{{ order.customer.name if order.customer else 'N/A' }}</td>
+                <td>Rp {{ '{:,.0f}'.format(order.total) }}</td>
+                <td>
+                    {% if order.status == 'pending' %}
+                        <span class="badge bg-warning text-dark">Pending</span>
+                    {% elif order.status == 'paid' %}
+                        <span class="badge bg-success">Paid</span>
+                    {% elif order.status == 'shipped' %}
+                        <span class="badge bg-info text-dark">Shipped</span>
+                    {% elif order.status == 'completed' %}
+                        <span class="badge bg-primary">Completed</span>
+                    {% elif order.status == 'cancelled' %}
+                        <span class="badge bg-danger">Cancelled</span>
+                    {% elif order.status == 'failed' %}
+                        <span class="badge bg-danger">Failed</span>
+                    {% else %}
+                        <span class="badge bg-secondary">{{ order.status.capitalize() }}</span>
+                    {% endif %}
+                </td>
+                <td>{{ order.created_at.strftime('%d-%m-%Y %H:%M') }}</td>
+                <td>{{ order.paid_at.strftime('%d-%m-%Y %H:%M') if order.paid_at else 'Belum Dibayar' }}</td>
+                <td>
+                    <a href="{{ url_for('admin.admin_order_detail', order_id=order.id) }}" class="btn btn-sm btn-info">Detail</a>
+                        {% if order.status == 'paid' and not order.shipped_at %} {# asumsi order.shipped_at menunjukkan apakah sudah dikirim #}
+                            <a href="{{ url_for('admin.admin_ship_order', order_id=order.id) }}" class="btn btn-sm btn-success ms-2">Input Resi</a> {# <--- UBAH INI #}
+                        {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<nav aria-label="Page navigation" class="mt-4">
+    <ul class="pagination justify-content-center">
+        <li class="page-item {% if not orders.has_prev %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('admin.order_management', page=orders.prev_num) }}" aria-label="Previous">
+                <span aria-hidden="true">&laquo;</span>
+            </a>
+        </li>
+        {% for page_num in orders.iter_pages() %}
+            {% if page_num %}
+                {% if page_num == orders.page %}
+                    <li class="page-item active"><a class="page-link" href="#">{{ page_num }}</a></li>
+                {% else %}
+                    <li class="page-item"><a class="page-link" href="{{ url_for('admin.order_management', page=page_num) }}">{{ page_num }}</a></li>
+                {% endif %}
+            {% else %}
+                <li class="page-item disabled"><a class="page-link" href="#">...</a></li>
+            {% endif %}
+        {% endfor %}
+        <li class="page-item {% if not orders.has_next %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('admin.order_management', page=orders.next_num) }}" aria-label="Next">
+                <span aria-hidden="true">&raquo;</span>
+            </a>
+        </li>
+    </ul>
+</nav>
+{% else %}
+<div class="alert alert-info text-center" role="alert">
+    No orders found.
+</div>
+{% endif %}
+
+{% endblock %}

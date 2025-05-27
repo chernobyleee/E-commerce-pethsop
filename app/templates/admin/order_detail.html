@@ -1,0 +1,115 @@
+{# app/templates/admin/order_detail.html #}
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Detail Pesanan <small class="text-muted">#{{ order.invoice_number }}</small></h1>
+    <hr>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-header">
+                    Informasi Pesanan
+                </div>
+                <div class="card-body">
+                    <p><strong>Order ID:</strong> {{ order.id }}</p>
+                    <p><strong>Invoice:</strong> {{ order.invoice_number }}</p>
+                    <p><strong>Status:</strong> 
+                        {% if order.status == 'pending' %}
+                            <span class="badge bg-warning text-dark">Pending</span>
+                        {% elif order.status == 'paid' %}
+                            <span class="badge bg-success">Paid</span>
+                        {% elif order.status == 'shipped' %}
+                            <span class="badge bg-info text-dark">Shipped</span>
+                        {% elif order.status == 'completed' %}
+                            <span class="badge bg-primary">Completed</span>
+                        {% elif order.status == 'cancelled' %}
+                            <span class="badge bg-danger">Cancelled</span>
+                        {% elif order.status == 'failed' %}
+                            <span class="badge bg-danger">Failed</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ order.status.capitalize() }}</span>
+                        {% endif %}
+                    </p>
+                    <p><strong>Total Pembayaran:</strong> Rp {{ '{:,.0f}'.format(order.total) }}</p>
+                    <p><strong>Dibuat Pada:</strong> {{ order.created_at.strftime('%d %B %Y, %H:%M') }}</p>
+                    <p><strong>Dibayar Pada:</strong> {{ order.paid_at.strftime('%d %B %Y, %H:%M') if order.paid_at else 'Belum Dibayar' }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-header">
+                    Informasi Pengiriman
+                </div>
+                <div class="card-body">
+                    {% if shipment %}
+                        <p><strong>Penerima:</strong> {{ shipment.name }} ({{ shipment.phone }})</p>
+                        <p><strong>Alamat:</strong> {{ shipment.address }}, {{ shipment.subdistrict }}, {{ shipment.district }}, {{ shipment.city }}, {{ shipment.province }}, {{ shipment.zip_code }}</p>
+                        <p><strong>Kurir:</strong> {{ shipment.courier }} - {{ shipment.service }}</p>
+                        <p><strong>Biaya:</strong> Rp {{ '{:,.0f}'.format(shipment.cost) }}</p>
+                        <p><strong>Nomor Resi:</strong> {{ shipment.tracking_number if shipment.tracking_number else 'Belum tersedia' }}</p>
+                        <p><strong>Dikirim Pada:</strong> {{ shipment.shipped_at.strftime('%d %B %Y, %H:%M') if shipment.shipped_at else 'Belum Dikirim' }}</p>
+                    {% else %}
+                        <p class="text-muted">Informasi pengiriman belum tersedia.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header">
+            Detail Item Pesanan
+        </div>
+        <div class="card-body">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Produk</th>
+                        <th>Harga Satuan</th>
+                        <th>Jumlah</th>
+                        <th>Subtotal Item</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in order_details %}
+                    <tr>
+                        <td>{{ item.product.name }}</td>
+                        <td>Rp {{ '{:,.0f}'.format(item.price) }}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td>Rp {{ '{:,.0f}'.format(item.price * item.quantity) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3" class="text-end"><strong>Subtotal Produk:</strong></td>
+                        <td class="fw-bold">Rp {{ '{:,.0f}'.format(subtotal) }}</td>
+                    </tr>
+                    <tr>
+                        <td colspan="3" class="text-end"><strong>Biaya Pengiriman:</strong></td>
+                        <td class="fw-bold">Rp {{ '{:,.0f}'.format(shipment.cost if shipment else 0) }}</td>
+                    </tr>
+                    <tr>
+                        <td colspan="3" class="text-end"><strong>Total Keseluruhan:</strong></td>
+                        <td class="fw-bold">Rp {{ '{:,.0f}'.format(order.total) }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <div class="mb-4">
+        {# Tombol Aksi Admin: Ubah status, input resi, dll. #}
+        {% if order.status == 'processing' and not order.shipment.tracking_number %}
+        {# Link ke halaman input resi untuk admin #}
+        <a href="{{ url_for('admin.admin_ship_order', order_id=order.id) }}" class="btn btn-success me-2">Input Resi & Proses Pengiriman</a>
+    {% endif %}
+    </div>
+
+</div>
+{% endblock %}

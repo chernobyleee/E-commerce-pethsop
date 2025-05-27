@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+
+{% block title %}Our Products{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Our Products</h1>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        {# Form Pencarian #}
+        <form action="{{ url_for('products.product_list') }}" method="GET" class="d-flex">
+            <input type="search" name="search_query" class="form-control me-2" placeholder="Search products..." value="{{ search_query or '' }}">
+            <input type="hidden" name="category_id" value="{{ selected_category_id or '' }}"> {# Pertahankan kategori yang dipilih saat mencari #}
+            <button type="submit" class="btn btn-outline-success">Search</button>
+        </form>
+    </div>
+    <div class="col-md-3">
+        {# Dropdown Filter Kategori #}
+        <form action="{{ url_for('products.product_list') }}" method="GET">
+            <select name="category_id" class="form-select" onchange="this.form.submit()">
+                <option value="all">All Categories</option>
+                {% for category in categories %}
+                    <option value="{{ category.id }}" {% if selected_category_id == category.id|string %}selected{% endif %}>
+                        {{ category.name }}
+                    </option>
+                {% endfor %}
+            </select>
+            <input type="hidden" name="search_query" value="{{ search_query or '' }}"> {# Pertahankan query pencarian saat memfilter #}
+        </form>
+    </div>
+    <div class="col-md-3 text-end">
+        {# Tombol Reset Filter/Pencarian #}
+        {% if search_query or selected_category_id %}
+            <a href="{{ url_for('products.product_list') }}" class="btn btn-outline-secondary">Reset Filters</a>
+        {% endif %}
+    </div>
+</div>
+
+
+<div class="row row-cols-1 row-cols-md-3 g-4">
+    {% for product in products.items %}
+    <div class="col">
+        <div class="card h-100">
+            {% if product.image_url %}
+            <img src="{{ product.image_url }}" class="card-img-top" alt="{{ product.name }}" style="height: 200px; object-fit: cover;">
+            {% else %}
+            <img src="https://via.placeholder.com/200?text=No+Image" class="card-img-top" alt="No Image" style="height: 200px; object-fit: cover;">
+            {% endif %}
+            <div class="card-body">
+                <h5 class="card-title">{{ product.name }}</h5>
+                {# Tampilkan Kategori #}
+                {% if product.category %}
+                    <p class="card-text text-muted"><small>Category: {{ product.category.name }}</small></p>
+                {% else %}
+                    <p class="card-text text-muted"><small>Category: N/A</small></p>
+                {% endif %}
+                <p class="card-text">Rp {{ '{:,.0f}'.format(product.price) }}</p>
+                <p class="card-text">Stock: {{ product.stock }}</p>
+                <a href="{{ url_for('products.product_detail', product_id=product.id) }}" class="btn btn-primary">View Details</a>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <p class="text-center">No products found matching your criteria.</p>
+    </div>
+    {% endfor %}
+</div>
+
+<nav aria-label="Page navigation" class="mt-4">
+    <ul class="pagination justify-content-center">
+        <li class="page-item {% if not products.has_prev %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('products.product_list', page=products.prev_num, category_id=selected_category_id, search_query=search_query) }}" aria-label="Previous">
+                <span aria-hidden="true">&laquo;</span>
+            </a>
+        </li>
+        {% for page_num in products.iter_pages() %}
+            {% if page_num %}
+                {% if page_num == products.page %}
+                    <li class="page-item active"><a class="page-link" href="#">{{ page_num }}</a></li>
+                {% else %}
+                    <li class="page-item"><a class="page-link" href="{{ url_for('products.product_list', page=page_num, category_id=selected_category_id, search_query=search_query) }}">{{ page_num }}</a></li>
+                {% endif %}
+            {% else %}
+                <li class="page-item disabled"><a class="page-link" href="#">...</a></li>
+            {% endif %}
+        {% endfor %}
+        <li class="page-item {% if not products.has_next %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('products.product_list', page=products.next_num, category_id=selected_category_id, search_query=search_query) }}" aria-label="Next">
+                <span aria-hidden="true">&raquo;</span>
+            </a>
+        </li>
+    </ul>
+</nav>
+
+{% endblock %}

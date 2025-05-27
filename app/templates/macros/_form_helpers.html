@@ -1,0 +1,23 @@
+{# app/templates/macros/_form_helpers.html #}
+
+{% macro render_field(field) %}
+    <div class="mb-3">
+        {{ field.label(class="form-label") }}
+        {# Cek jika field adalah checkbox atau radio, render tanpa class form-control #}
+        {% if field.type == 'BooleanField' or field.type == 'RadioField' %}
+            {{ field(**kwargs) }}
+        {% else %}
+            {{ field(class="form-control", **kwargs) }}
+        {% endif %}
+        {% if field.errors %}
+            <div class="invalid-feedback d-block">
+                {% for error in field.errors %}
+                    <span>{{ error }}</span>
+                {% endfor %}
+            </div>
+        {% endif %}
+        {% if field.description %}
+            <small class="form-text text-muted">{{ field.description }}</small>
+        {% endif %}
+    </div>
+{% endmacro %}

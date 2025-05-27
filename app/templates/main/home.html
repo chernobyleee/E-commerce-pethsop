@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}Welcome to PetShop!{% endblock %}
+
+{% block content %}
+<div class="p-5 mb-4 bg-light rounded-3">
+    <div class="container-fluid py-5 text-center">
+        <h1 class="display-5 fw-bold">Welcome to PetShop!</h1>
+        <p class="col-md-8 fs-4 mx-auto">Find the best products for your beloved pets.</p>
+        <a href="{{ url_for('products.product_list') }}" class="btn btn-primary btn-lg" type="button">Shop Now!</a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <h2>About Us</h2>
+        <p>PetShop is your one-stop shop for all your pet needs. We offer a wide range of high-quality products for dogs, cats, birds, and more. Our mission is to provide the best for your furry friends.</p>
+    </div>
+    <div class="col-md-6">
+        <h2>Our Services</h2>
+        <ul>
+            <li>Premium Pet Food</li>
+            <li>Toys & Accessories</li>
+            <li>Grooming Supplies</li>
+            <li>Health & Wellness Products</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

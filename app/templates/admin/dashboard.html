@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Admin Dashboard</h1>
+
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <h5 class="card-title">Total Products</h5>
+                <p class="card-text fs-2">{{ total_products }}</p>
+                <a href="{{ url_for('admin.product_management') }}" class="text-white stretched-link">Manage Products <i class="fas fa-arrow-circle-right"></i></a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <h5 class="card-title">Total Users</h5>
+                <p class="card-text fs-2">{{ total_users }}</p>
+                    <a href="{{ url_for('admin.user_management') }}" class="text-white stretched-link">Manage Users <i class="fas fa-arrow-circle-right"></i></a> 
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="card text-white bg-info">
+            <div class="card-body">
+                <h5 class="card-title">Total Orders</h5>
+                <p class="card-text fs-2">{{ total_orders }}</p>
+                <a href="{{ url_for('admin.user_management') }}" class="text-white stretched-link">Manage Orders <i class="fas fa-arrow-circle-right"></i></a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <h5 class="card-title">Pending Orders</h5>
+                <p class="card-text fs-2">{{ pending_orders }}</p>
+                <a href="{{ url_for('admin.order_management') }}" class="text-white stretched-link">View Pending Orders <i class="fas fa-arrow-circle-right"></i></a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Tambahkan bagian lain untuk laporan, grafik, dll. #}
+
+{% endblock %}
