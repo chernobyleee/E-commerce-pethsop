@@ -108,8 +108,32 @@
         {% if order.status == 'processing' and not order.shipment.tracking_number %}
         {# Link ke halaman input resi untuk admin #}
         <a href="{{ url_for('admin.admin_ship_order', order_id=order.id) }}" class="btn btn-success me-2">Input Resi & Proses Pengiriman</a>
-    {% endif %}
-    </div>
+        {% endif %}
 
+        {# ... di dalam detail pesanan admin ... #}
+        {% if order.status == 'cancelled' and order.payment_status == 'refund_requested' %}
+        {% set customer_phone = order.shipment.phone if order.shipment else (order.customer.phone_number if order.customer else None) %}
+        {% if customer_phone %}
+        {% set refund_whatsapp_link = generate_whatsapp_refund_link(order, customer_phone) %}
+            {% if refund_whatsapp_link %}
+            <div class="alert alert-info">
+                <p>Pesanan ini telah dibatalkan oleh pelanggan dan memerlukan proses refund.</p>
+                <a href="{{ refund_whatsapp_link }}" class="btn btn-success" target="_blank">
+                    <i class="fab fa-whatsapp"></i> Hubungi Pelanggan via WhatsApp untuk Refund
+                </a>
+                <p><small>Ini akan membuka WhatsApp dengan template pesan untuk dikirim ke pelanggan.</small></p>
+            </div>
+            {% else %}
+            <p class="text-warning">Tidak dapat membuat link WhatsApp, nomor telepon pelanggan tidak valid atau tidak ada.</p>
+            {% endif %}
+        {% else %}
+            <p class="text-warning">Nomor telepon pelanggan tidak ditemukan untuk menghubungi terkait refund.</p>
+        {% endif %}
+        {# Tambahkan tombol/form untuk admin menandai bahwa refund sudah diproses #}
+        <form action="{{ url_for('admin.mark_refund_processed', order_id=order.id) }}" method="POST">
+            <button type="submit" class="btn btn-info mt-2">Tandai Refund Sudah Diproses</button>
+        </form>
+        {% endif %}
+        </div>
 </div>
 {% endblock %}

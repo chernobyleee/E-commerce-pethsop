@@ -1,49 +1,179 @@
-{% extends 'base.html' %}
+{% extends 'base.html' %} {# Atau 'admin/admin_base.html' jika Anda punya #}
 
-{% block title %}Admin Dashboard{% endblock %}
+{% block title %}{{ title }}{% endblock %}
 
 {% block content %}
-<h1 class="mb-4">Admin Dashboard</h1>
+<div class="container-fluid px-4">
+    <h1 class="mt-4 mb-4">{{ title }}</h1>
 
-<div class="row">
-    <div class="col-md-4 mb-4">
-        <div class="card text-white bg-primary">
-            <div class="card-body">
-                <h5 class="card-title">Total Products</h5>
-                <p class="card-text fs-2">{{ total_products }}</p>
-                <a href="{{ url_for('admin.product_management') }}" class="text-white stretched-link">Manage Products <i class="fas fa-arrow-circle-right"></i></a>
+    {# Bagian Aktivitas Terbaru (Notifikasi Sederhana) #}
+    {% if recent_pending_payment_orders or recent_processing_orders %}
+    <div class="row">
+        <div class="col-xl-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-bell me-1"></i>
+                    Aktivitas Terbaru / Perlu Perhatian
+                </div>
+                <div class="card-body">
+                    {% if recent_pending_payment_orders %}
+                        <p class="mb-1"><strong>Menunggu Pembayaran:</strong>
+                            {% for order in recent_pending_payment_orders %}
+                                <a href="{{ url_for('admin.admin_order_detail', order_id=order.id) }}" class="badge bg-warning text-dark me-1" title="Order pada {{ order.created_at.strftime('%d %b, %H:%M') }}">{{ order.invoice_number }}</a>
+                            {% endfor %}
+                        </p>
+                    {% endif %}
+                    {% if recent_processing_orders %}
+                        <p class="mb-0"><strong>Perlu Segera Diproses/Dikirim:</strong>
+                            {% for order in recent_processing_orders %}
+                                <a href="{{ url_for('admin.admin_order_detail', order_id=order.id) }}" class="badge bg-info text-dark me-1" title="Dibayar pada {{ order.paid_at.strftime('%d %b, %H:%M') if order.paid_at else 'N/A' }}">{{ order.invoice_number }}</a>
+                            {% endfor %}
+                        </p>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-4 mb-4">
-        <div class="card text-white bg-success">
-            <div class="card-body">
-                <h5 class="card-title">Total Users</h5>
-                <p class="card-text fs-2">{{ total_users }}</p>
-                    <a href="{{ url_for('admin.user_management') }}" class="text-white stretched-link">Manage Users <i class="fas fa-arrow-circle-right"></i></a> 
+    {% endif %}
+
+    {# Baris untuk Statistik Penghasilan #}
+    <h3 class="mt-4 mb-3">Statistik Penghasilan</h3>
+    <div class="row">
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-white-75 small">Penghasilan Hari Ini</div>
+                            <div class="fs-4 fw-bold">Rp {{ '{:,.0f}'.format(total_revenue_today) }}</div>
+                        </div>
+                        <i class="fas fa-calendar-day fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card bg-primary text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-white-75 small">Penghasilan Bulan Ini</div>
+                            <div class="fs-4 fw-bold">Rp {{ '{:,.0f}'.format(total_revenue_this_month) }}</div>
+                        </div>
+                        <i class="fas fa-calendar-alt fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card bg-dark text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-white-75 small">Total Semua Penghasilan</div>
+                            <div class="fs-4 fw-bold">Rp {{ '{:,.0f}'.format(total_revenue_all_time) }}</div>
+                        </div>
+                        <i class="fas fa-landmark fa-2x text-white-50"></i>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-4 mb-4">
-        <div class="card text-white bg-info">
-            <div class="card-body">
-                <h5 class="card-title">Total Orders</h5>
-                <p class="card-text fs-2">{{ total_orders }}</p>
-                <a href="{{ url_for('admin.user_management') }}" class="text-white stretched-link">Manage Orders <i class="fas fa-arrow-circle-right"></i></a>
+    <hr>
+
+    {# Baris untuk Statistik Pesanan #}
+    <h3 class="mt-4 mb-3">Statistik Pesanan</h3>
+    <div class="row">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-primary text-white h-100">
+                <div class="card-body">Total Pesanan <div class="fs-4 fw-bold">{{ total_orders }}</div></div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="{{ url_for('admin.order_management') }}">Lihat Detail</a>
+                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
             </div>
         </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-warning text-dark h-100">
+                <div class="card-body">Menunggu Pembayaran <div class="fs-4 fw-bold">{{ orders_pending_payment }}</div></div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-dark stretched-link" href="{{ url_for('admin.order_management', status_filter='pending_payment') }}">Lihat Detail</a>
+                    <div class="small text-dark"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-info text-white h-100">
+                <div class="card-body">Perlu Diproses/Dikirim <div class="fs-4 fw-bold">{{ orders_awaiting_shipment }}</div></div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="{{ url_for('admin.order_management', status_filter='processing') }}">Lihat Detail</a>
+                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-secondary text-white h-100">
+                <div class="card-body">Pesanan Dikirim <div class="fs-4 fw-bold">{{ orders_shipped }}</div></div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="{{ url_for('admin.order_management', status_filter='shipped') }}">Lihat Detail</a>
+                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body">Pesanan Selesai <div class="fs-4 fw-bold">{{ orders_completed }}</div></div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="{{ url_for('admin.order_management', status_filter='completed') }}">Lihat Detail</a>
+                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-danger text-white h-100">
+                <div class="card-body">Pesanan Dibatalkan <div class="fs-4 fw-bold">{{ orders_cancelled }}</div></div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="{{ url_for('admin.order_management', status_filter='cancelled') }}">Lihat Detail</a>
+                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+        {# Kartu yang dihilangkan: Menunggu Refund, Stok Menipis, Stok Habis, Total Pengguna #}
+        {# Jika Anda ingin menambahkan Total Pengguna kembali: #}
+        <div class="col-xl-3 col-md-6 mb-4"> {# Atau kelas grid lain yang Anda gunakan #}
+            <div class="card bg-warning text-white h-100"> {# Sesuaikan warna jika perlu #}
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-white-75 small">Total Pengguna</div>
+                            <div class="fs-4 fw-bold">{{ total_users }}</div> {# PASTIKAN INI ADA #}
+                        </div>
+                        <i class="fas fa-users fa-2x text-white-50"></i> {# Contoh ikon #}
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="{{ url_for('admin.user_management') }}">Lihat Pengguna</a>
+                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+
     </div>
-    <div class="col-md-4 mb-4">
-        <div class="card text-white bg-warning">
-            <div class="card-body">
-                <h5 class="card-title">Pending Orders</h5>
-                <p class="card-text fs-2">{{ pending_orders }}</p>
-                <a href="{{ url_for('admin.order_management') }}" class="text-white stretched-link">View Pending Orders <i class="fas fa-arrow-circle-right"></i></a>
+    <hr>
+
+    {# Baris untuk Statistik Produk #}
+    <h3 class="mt-4 mb-3">Statistik Produk</h3>
+     <div class="row">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-dark text-white h-100">
+                <div class="card-body">Total Produk Aktif <div class="fs-4 fw-bold">{{ total_active_products }}</div></div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="{{ url_for('admin.product_management') }}">Lihat Produk</a>
+                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
             </div>
         </div>
+        {# Kartu Produk Stok Menipis/Habis dihilangkan sesuai permintaan #}
     </div>
 </div>
-
-{# Tambahkan bagian lain untuk laporan, grafik, dll. #}
-
 {% endblock %}

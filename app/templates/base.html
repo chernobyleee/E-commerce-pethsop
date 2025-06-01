@@ -31,6 +31,9 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('products.product_list') }}">Products</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('main.track_order_page') }}">Tracking order</a>
+                    </li>
                     {% if current_user.is_authenticated %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('cart.view_cart') }}">Cart <i class="fas fa-shopping-cart"></i></a>

@@ -16,6 +16,8 @@ import os
 from werkzeug.utils import secure_filename
 from app.forms import UpdateProfileForm, AddProductForm, UserForm # Import UserForm
 from decimal import Decimal
+from datetime import datetime, timedelta # <-- TAMBAHKAN 'timedelta' DI SINI
+from sqlalchemy import func 
 
 # --- Import Form Baru untuk Kategori ---
 from app.forms import AddProductForm, UserForm # Pastikan AddProductForm dan UserForm sudah ada
@@ -50,17 +52,83 @@ def save_image_file(image_file):
 @login_required
 @admin_required
 def dashboard():
-    total_products = Product.query.filter_by(deleted_at=None).count()
-    total_users = User.query.count()
+    # Product Statistics
+    total_active_products = Product.query.filter_by(deleted_at=None).count()
+
+    # User Statistics
+    total_users = User.query.count() 
+    # Order Statistics
     total_orders = Order.query.count()
-    pending_orders = Order.query.filter_by(status='pending').count()
+    
+    orders_pending_payment = Order.query.filter(
+        Order.status.in_(['pending', 'pending_payment']),
+        Order.payment_status == 'unpaid'
+    ).count()
+    
+    orders_awaiting_shipment = Order.query.filter(
+        Order.status == 'processing' 
+    ).count()
+    
+    orders_shipped = Order.query.filter_by(status='shipped').count()
+    orders_completed = Order.query.filter_by(status='completed').count()
+    orders_cancelled = Order.query.filter_by(status='cancelled').count()
+    
+    # Revenue Statistics
+    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    current_month_start = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    next_month_num = current_month_start.month % 12 + 1
+    year_offset = 1 if current_month_start.month == 12 else 0
+    next_month_start = current_month_start.replace(year=current_month_start.year + year_offset, month=next_month_num, day=1)
+    current_month_end = next_month_start - timedelta(seconds=1) # timedelta digunakan di sini
+
+    paid_at_is_not_null = Order.paid_at.isnot(None)
+
+    total_revenue_today = db.session.query(func.sum(Order.total)).filter(
+        Order.status == 'completed', 
+        paid_at_is_not_null,
+        Order.paid_at >= today_start,
+        Order.paid_at < (today_start + timedelta(days=1)) # timedelta digunakan di sini
+    ).scalar() or 0
+
+    total_revenue_this_month = db.session.query(func.sum(Order.total)).filter(
+        Order.status == 'completed', 
+        paid_at_is_not_null, 
+        Order.paid_at >= current_month_start,
+        Order.paid_at <= current_month_end
+    ).scalar() or 0
+
+    total_revenue_all_time = db.session.query(func.sum(Order.total)).filter(
+        Order.status == 'completed',
+        paid_at_is_not_null
+    ).scalar() or 0
+    
+    recent_pending_payment_orders = Order.query.filter(
+        Order.status.in_(['pending', 'pending_payment']),
+        Order.payment_status == 'unpaid'
+    ).order_by(Order.created_at.desc()).limit(3).all()
+
+    recent_processing_orders = Order.query.filter(
+        Order.status == 'processing'
+    ).order_by(Order.paid_at.desc() if hasattr(Order, 'paid_at') else Order.created_at.desc()).limit(3).all()
 
     return render_template('admin/dashboard.html',
                            title='Admin Dashboard',
-                           total_products=total_products,
+                           total_active_products=total_active_products,
                            total_users=total_users,
                            total_orders=total_orders,
-                           pending_orders=pending_orders)
+                           orders_pending_payment=orders_pending_payment,
+                           orders_awaiting_shipment=orders_awaiting_shipment,
+                           orders_shipped=orders_shipped,
+                           orders_completed=orders_completed,
+                           orders_cancelled=orders_cancelled,
+                           total_revenue_today=total_revenue_today,
+                           total_revenue_this_month=total_revenue_this_month,
+                           total_revenue_all_time=total_revenue_all_time,
+                           recent_pending_payment_orders=recent_pending_payment_orders,
+                           recent_processing_orders=recent_processing_orders
+                           )
+
 
 @admin_bp.route('/products')
 @login_required
@@ -281,13 +349,43 @@ def delete_product(product_id):
 @admin_required
 def order_management():
     page = request.args.get('page', 1, type=int)
-    per_page = 10
+    per_page = 10 # Atau ambil dari config
     
-    orders = Order.query.order_by(Order.created_at.desc()).paginate(page=page, per_page=per_page)
+    # Ambil filter status dari query parameter
+    status_filter = request.args.get('status_filter', 'all') # Default 'all'
+
+    query = Order.query # Query dasar
+
+    if status_filter and status_filter != 'all':
+        if status_filter == 'pending_payment': # Kasus khusus jika status gabungan
+            query = query.filter(Order.status.in_(['pending', 'pending_payment']), Order.payment_status == 'unpaid')
+        elif status_filter == 'refund_requested': # Jika Anda punya status ini di payment_status
+             query = query.filter(Order.status == 'cancelled', Order.payment_status == 'refund_requested')
+        else:
+            query = query.filter(Order.status == status_filter)
     
-    return render_template('admin/order_management.html',
-                           title='Manage Orders',
-                           orders=orders)
+    orders = query.order_by(Order.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
+    
+    # Daftar status untuk dropdown filter
+    # Anda bisa mendefinisikan ini secara manual atau mengambil dari enum jika ada
+    order_statuses = [
+        {'value': 'all', 'name': 'Semua Status'},
+        {'value': 'pending', 'name': 'Pending (Belum ke Pembayaran)'},
+        {'value': 'pending_payment', 'name': 'Menunggu Pembayaran'}, # Gabungan dari status 'pending'/'pending_payment' & payment_status 'unpaid'
+        {'value': 'processing', 'name': 'Perlu Diproses/Dikirim'},
+        {'value': 'shipped', 'name': 'Dikirim'},
+        {'value': 'completed', 'name': 'Selesai'},
+        {'value': 'cancelled', 'name': 'Dibatalkan'},
+        {'value': 'failed', 'name': 'Gagal'},
+        {'value': 'refund_requested', 'name': 'Menunggu Refund'} # Jika Anda menggunakan status ini
+    ]
+    
+    return render_template('admin/order_management.html', 
+                           title='Manage Orders', 
+                           orders=orders,
+                           order_statuses=order_statuses,
+                           current_status_filter=status_filter)
+
 
 @admin_bp.route('/orders/<string:order_id>/ship', methods=['GET', 'POST'])
 @login_required
@@ -348,7 +446,29 @@ def admin_order_detail(order_id):
                            order_details=order_details,
                            shipment=shipment,
                            subtotal=subtotal)
+    
+# --- BARU: Route untuk menandai refund sudah diproses ---
+@admin_bp.route('/orders/<string:order_id>/mark_refund_processed', methods=['POST'])
+@login_required
+@admin_required
+def mark_refund_processed(order_id):
+    order = Order.query.get_or_404(order_id)
 
+    if order.status == 'cancelled' and order.payment_status == 'refund_requested':
+        try:
+            order.payment_status = 'refunded' # Atau 'refund_completed'
+            # Anda mungkin ingin mengubah order.status juga, misalnya kembali ke 'cancelled' jika sebelumnya 'pending_refund'
+            # atau biarkan 'cancelled'
+            db.session.commit()
+            flash(f'Refund untuk pesanan {order.invoice_number} telah ditandai sebagai diproses/selesai.', 'success')
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error marking refund as processed for order {order.id}: {str(e)}", exc_info=True)
+            flash('Gagal menandai refund sebagai diproses. Coba lagi.', 'danger')
+    else:
+        flash('Status pesanan tidak memungkinkan untuk menandai refund sebagai diproses.', 'warning')
+    
+    return redirect(url_for('admin.admin_order_detail', order_id=order.id))
 
 # --- Rute Manajemen User (tetap sama) ---
 

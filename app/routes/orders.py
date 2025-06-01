@@ -515,3 +515,67 @@ def mark_as_received(order_id):
         flash('Pesanan tidak dapat ditandai sebagai diterima.', 'warning')
     
     return redirect(url_for('orders.order_detail', order_id=order.id))
+
+def restock_order_items(order):
+    """Mengembalikan stok produk dari order yang dibatalkan."""
+    for detail in order.order_details:
+        product = Product.query.get(detail.product_id)
+        if product:
+            product.stock += detail.quantity
+            db.session.add(product)
+    current_app.logger.info(f"Stock restocked for cancelled order {order.invoice_number}")
+
+@orders_bp.route('/order/<string:order_id>/cancel_unpaid', methods=['POST'])
+@login_required
+@customer_required # Pastikan decorator ini ada dan sesuai
+def cancel_unpaid_order(order_id):
+    order = Order.query.filter_by(id=order_id, user_id=current_user.id).first_or_404()
+
+    if order.status in ['pending', 'pending_payment']: # Hanya bisa dibatalkan jika belum ada proses pembayaran aktif Snap
+        try:
+            order.status = 'cancelled'
+            order.cancelled_at = datetime.utcnow()
+            
+            # Kembalikan stok produk yang ada di keranjang saat order dibuat (jika Anda menguranginya saat checkout)
+            # Jika Anda mengurangi stok saat item ditambahkan ke keranjang, logika ini mungkin tidak diperlukan,
+            # atau perlu disesuaikan. Asumsi saya, stok dikurangi saat order dibuat (seperti di kode checkout Anda).
+            restock_order_items(order) # Panggil fungsi restock
+
+            db.session.commit()
+            flash('Pesanan Anda berhasil dibatalkan.', 'success')
+            return redirect(url_for('orders.order_list')) # Atau ke halaman lain yang sesuai
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error cancelling unpaid order {order.id}: {str(e)}")
+            flash('Terjadi kesalahan saat membatalkan pesanan. Coba lagi.', 'danger')
+            return redirect(url_for('orders.payment', order_id=order.id)) # Kembali ke halaman pembayaran jika gagal
+    else:
+        flash('Pesanan ini tidak dapat dibatalkan pada tahap ini.', 'warning')
+        return redirect(url_for('orders.order_detail', order_id=order.id))
+
+@orders_bp.route('/order/<string:order_id>/request_cancellation', methods=['POST'])
+@login_required
+@customer_required
+def request_cancellation(order_id):
+    order = Order.query.filter_by(id=order_id, user_id=current_user.id).first_or_404()
+
+    # Bisa dibatalkan jika statusnya 'processing' (artinya sudah dibayar, menunggu dikirim)
+    # DAN belum ada nomor resi / belum dikirim
+    if order.status == 'processing' and (not order.shipment or not order.shipment.tracking_number):
+        try:
+            order.status = 'cancelled' # Atau 'pending_refund', 'cancelled_by_customer'
+            order.payment_status = 'refund_requested' # Tambahkan status ini jika perlu untuk tracking admin
+            order.cancelled_at = datetime.utcnow()
+
+            restock_order_items(order) # Kembalikan stok
+
+            db.session.commit()
+            flash('Permintaan pembatalan pesanan Anda berhasil. Admin akan segera menghubungi Anda via WhatsApp untuk proses pengembalian dana.', 'success')
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error requesting cancellation for order {order.id}: {str(e)}")
+            flash('Terjadi kesalahan saat membatalkan pesanan. Coba lagi.', 'danger')
+    else:
+        flash('Pesanan ini sudah dikirim atau tidak dapat dibatalkan pada tahap ini.', 'warning')
+    
+    return redirect(url_for('orders.order_detail', order_id=order.id))

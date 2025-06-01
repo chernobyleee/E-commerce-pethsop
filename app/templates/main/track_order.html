@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-7">
+            <h1 class="text-center mb-4">{{ title }}</h1>
+
+            {% include '_messages.html' %}
+
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('main.track_order_page') }}" id="trackingForm">
+                        {# Input untuk Nomor Invoice / Order ID #}
+                        <div class="mb-3">
+                            <label for="invoice_number_input" class="form-label">Nomor Invoice / Order ID</label>
+                            <input type="text" class="form-control" id="invoice_number_input" name="invoice_number_input" value="{{ invoice_query }}" placeholder="Masukkan nomor invoice Anda" required>
+                        </div>
+
+                        {# Input untuk Nomor Resi (AWB) #}
+                        <div class="mb-3">
+                            <label for="airway_bill_input" class="form-label">Nomor Resi (AWB)</label>
+                            <input type="text" class="form-control" id="airway_bill_input" name="airway_bill_input" value="{{ awb_query }}" placeholder="Masukkan nomor resi Anda" required>
+                        </div>
+
+                        {# Pilihan Kurir (tetap diperlukan untuk API tracking AWB) #}
+                        <div class="mb-3" id="courier_selection_div">
+                            <label for="courier_code" class="form-label">Pilih Kurir</label>
+                            <select class="form-select" id="courier_code" name="courier_code" required>
+                                <option value="">-- Pilih Kurir --</option>
+                                {% for code, name in supported_couriers.items() %}
+                                    <option value="{{ code }}" {% if courier_query == code %}selected{% endif %}>{{ name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">Lacak Sekarang</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {# Hasil Pelacakan Internal (jika order ditemukan) #}
+            {% if internal_order_status %}
+            <div class="card shadow-sm mt-5">
+                <div class="card-header {% if tracking_result %}bg-secondary{% else %}bg-info{% endif %} text-white">
+                    <h5 class="mb-0">Status Pesanan Internal: {{ internal_order_status.invoice_number }}</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Nama Pemesan:</strong> {{ internal_order_status.customer_name }}</p>
+                    <p><strong>Status Pesanan:</strong> <span class="fw-bold">{{ internal_order_status.status }}</span></p>
+                    <p><strong>Status Pembayaran:</strong> {{ internal_order_status.payment_status }}</p>
+                    <p><strong>Tanggal Pesan:</strong> {{ internal_order_status.created_at }}</p>
+                    <p><strong>Tanggal Bayar:</strong> {{ internal_order_status.paid_at }}</p>
+                    {% if internal_order_status.shipping_info %}
+                        <p class="mt-3 text-muted"><em>{{ internal_order_status.shipping_info }}</em></p>
+                    {% endif %}
+                     {% if internal_order_status.awb_from_db and internal_order_status.courier_from_db %}
+                        <p class="mt-3">Nomor Resi terdaftar untuk pesanan ini: <strong>{{ internal_order_status.awb_from_db }}</strong> (Kurir: {{ internal_order_status.courier_from_db }}).</p>
+                        {% if not tracking_result and awb_query and courier_query %}
+                            <p class="text-warning">Informasi pelacakan dari ekspedisi tidak ditemukan atau ada masalah saat mengambil data.</p>
+                        {% endif %}
+                    {% elif awb_query %}
+                         <p class="text-warning mt-3">Nomor resi belum terdaftar untuk pesanan ini di sistem kami, atau nomor resi yang Anda masukkan ({{ awb_query }}) tidak cocok.</p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {# Hasil Pelacakan Ekspedisi (jika ada dan valid) #}
+            {% if tracking_result %}
+            <div class="card shadow-sm mt-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Hasil Pelacakan Ekspedisi untuk Resi: {{ tracking_result.summary.awb if tracking_result.summary else awb_query }}</h5>
+                </div>
+                <div class="card-body">
+                    {% if tracking_result.summary %}
+                    <div class="mb-4">
+                        <h6>Informasi Umum</h6>
+                        <p><strong>Kurir:</strong> {{ tracking_result.summary.courier_name | upper }}</p>
+                        <p><strong>Layanan:</strong> {{ tracking_result.summary.service_code | default('N/A') }}</p>
+                        <p><strong>Status Terakhir:</strong> <span class="fw-bold text-success">{{ tracking_result.summary.status | default('N/A') }}</span></p>
+                        <p><strong>Tanggal Pengiriman:</strong> {{ tracking_result.summary.ship_date | default('N/A') }}</p>
+                        <p><strong>Estimasi Tiba:</strong> {{ tracking_result.summary.etd | default('N/A') }}</p>
+                    </div>
+                    {% endif %}
+
+                    {% if tracking_result.detail %}
+                    <div class="mb-4">
+                        <h6>Informasi Pengirim & Penerima</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Pengirim:</strong><br>
+                                    {{ tracking_result.detail.shipper_name | default('N/A') }}<br>
+                                    {{ tracking_result.detail.shipper_address1 | default('') }} {{ tracking_result.detail.shipper_address2 | default('') }} {{ tracking_result.detail.shipper_address3 | default('') }} {{ tracking_result.detail.shipper_city | default('') }}
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Penerima:</strong><br>
+                                    {{ tracking_result.detail.receiver_name | default('N/A') }}<br>
+                                    {{ tracking_result.detail.receiver_address1 | default('') }} {{ tracking_result.detail.receiver_address2 | default('') }} {{ tracking_result.detail.receiver_address3 | default('') }} {{ tracking_result.detail.receiver_city | default('') }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if tracking_result.manifest and tracking_result.manifest|length > 0 %}
+                    <h6>Riwayat Perjalanan Paket</h6>
+                    <ul class="list-group list-group-flush">
+                        {% for item in tracking_result.manifest | reverse %}
+                        <li class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ item.manifest_description }}</h6>
+                                <small class="text-muted">{{ item.manifest_date }} {{ item.manifest_time }}</small>
+                            </div>
+                            <p class="mb-1"><small>Lokasi: {{ item.city_name | default('N/A') }}</small></p>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% elif tracking_result %}
+                    <p class="text-muted">Tidak ada riwayat perjalanan detail yang tersedia dari ekspedisi.</p>
+                    {% endif %}
+                </div>
+            </div>
+            {% elif error_message and request.method == 'POST' and not internal_order_status %}
+             <div class="alert alert-danger mt-4" role="alert">
+                {{ error_message }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+{{ super() }}
+{# Tidak perlu JavaScript untuk toggle field lagi karena semua field wajib #}
+{% endblock %}
+
+{% endblock %}

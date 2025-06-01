@@ -28,6 +28,16 @@
                     <p class="mt-3 text-muted">Anda akan diarahkan ke halaman pembayaran Midtrans.</p>
                 </div>
                 
+                {# --- TOMBOL BATALKAN PESANAN (SEBELUM BAYAR) --- #}
+                {% if order.status in ['pending', 'pending_payment'] %} {# Atau gunakan order.can_be_cancelled_before_payment() jika Anda buat methodnya #}
+                <hr>
+                <p class="mt-3">Tidak jadi memesan?</p>
+                <form action="{{ url_for('orders.cancel_unpaid_order', order_id=order.id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan pesanan ini?');">
+                    <button type="submit" class="btn btn-outline-danger">Batalkan Pesanan</button>
+                </form>
+                {% endif %}
+                {# --- AKHIR TOMBOL BATALKAN PESANAN --- #}
+
                 {# Pesan error jika gagal mendapatkan token (opsional, bisa juga ditangani di JS saja) #}
                 <div id="error-message" class="alert alert-danger" role="alert" style="display: none;">
                     Terjadi kesalahan saat membuat token pembayaran. Silakan coba lagi nanti atau hubungi customer service.

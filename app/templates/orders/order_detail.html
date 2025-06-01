@@ -31,16 +31,28 @@
                 <p><strong>Status:</strong>
                     {% if order.status == 'pending' or order.status == 'pending_payment' %} {# Tambahkan pending_payment #}
                         <span class="badge bg-warning text-dark">Pending Pembayaran</span>
+                        <form action="{{ url_for('orders.request_cancellation', order_id=order.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan pesanan ini? Dana akan dikembalikan setelah konfirmasi oleh Admin.');">
+                            <button type="submit" class="btn btn-danger">Batalkan Pesanan</button>
+                        </form>
                     {% elif order.status == 'paid' %}
                         <span class="badge bg-success">Paid</span>
                     {% elif order.status == 'shipped' %}
                         <span class="badge bg-info text-dark">Shipped</span>
                     {% elif order.status == 'completed' %}
                         <span class="badge bg-primary">Completed</span>
+                        <p class="text-info">Pesanan ini sudah dikirim dan tidak dapat dibatalkan.</p>
                     {% elif order.status == 'cancelled' %}
                         <span class="badge bg-danger">Cancelled</span>
+                        <p class="text-info">Pesanan ini telah dibatalkan pada {{ order.cancelled_at.strftime('%d %B %Y, %H:%M') if order.cancelled_at }}.</p>
+                            {% if order.payment_status == 'refund_requested' %}
+                                <p class="text-info">Admin akan menghubungi Anda untuk proses pengembalian dana.</p>
+                            {% endif %}
                     {% elif order.status == 'failed' %}
                         <span class="badge bg-danger">Failed</span>
+                    {% elif order.status == 'processing' and (not order.shipment or not order.shipment.tracking_number) %}
+                        <form action="{{ url_for('orders.request_cancellation', order_id=order.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan pesanan ini? Dana akan dikembalikan setelah konfirmasi oleh Admin.');">
+                            <button type="submit" class="btn btn-danger">Batalkan Pesanan</button>
+                        </form>
                     {% else %}
                         <span class="badge bg-secondary">{{ order.status.capitalize() }}</span>
                     {% endif %}

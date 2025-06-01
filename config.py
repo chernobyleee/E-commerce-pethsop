@@ -30,3 +30,5 @@ class Config:
     SHOP_ORIGIN_DISTRICT = "Ciampea" 
     SHOP_ORIGIN_ZIP_CODE = "16620" 
     SHOP_ORIGIN_ADDRESS = "Jalan Cibuntu 01 Rt 02 Rw 04"
+
+    LOW_STOCK_THRESHOLD = os.environ.get('LOW_STOCK_THRESHOLD',2)

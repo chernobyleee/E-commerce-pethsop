@@ -7,6 +7,7 @@ import os
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
 from flask_apscheduler import APScheduler
+from .utils import generate_whatsapp_refund_link
 
 # --- TAMBAHKAN IMPOR INI ---
 from jinja2 import FileSystemLoader, Environment
@@ -55,10 +56,20 @@ def create_app():
     def load_user(user_id):
         return User.query.get(user_id)
 
+     # Context processor untuk inject variabel/fungsi ke semua template
+    @app.context_processor
+    def inject_global_vars():
+        return dict(
+            datetime=datetime, # Jika Anda butuh datetime di template
+            generate_whatsapp_refund_link=generate_whatsapp_refund_link # Daftarkan fungsi di sini
+        )
+
+    
     @app.context_processor
     def inject_datetime():
         return {'datetime': datetime}
 
+    
     # Register blueprints
     from .routes.main import main_bp
     from .routes.products import products_bp
@@ -84,4 +95,5 @@ def create_app():
 
     scheduler.add_job(id='auto_receive_orders', func=lambda: app.app_context().push() or check_delivered_orders(app), trigger='interval', hours=1, replace_existing=True)
 
+    
     return app

@@ -41,3 +41,32 @@ class Order(db.Model):
 
     def __repr__(self):
         return f'<Order {self.invoice_number}>'
+    
+    def can_be_cancelled_by_customer(self):
+        """
+        Cek apakah order bisa dibatalkan oleh customer setelah pembayaran.
+        Bisa dibatalkan jika statusnya 'processing' (sudah dibayar, menunggu dikirim oleh admin)
+        DAN belum ada nomor resi di shipment (atau shipment.shipped_at belum diisi).
+        """
+        # Pastikan self.shipment ada sebelum mengakses tracking_number atau shipped_at
+        shipment_exists_and_not_shipped = True
+        if self.shipment:
+            # Jika ada shipment, cek apakah sudah dikirim (berdasarkan tracking_number atau shipped_at di shipment)
+            # Asumsi jika shipment.shipped_at diisi, berarti sudah dikirim.
+            # Atau, jika Anda hanya mengandalkan tracking_number:
+            if self.shipment.tracking_number or self.shipment.shipped_at:
+                shipment_exists_and_not_shipped = False
+        else:
+            # Jika tidak ada record shipment sama sekali, anggap belum dikirim (tergantung alur bisnis Anda)
+            # Namun, biasanya jika sudah 'processing', record shipment sudah dibuat walau resi kosong.
+            # Jika shipment selalu dibuat saat order, maka kondisi `not self.shipment` mungkin tidak relevan di sini.
+            pass # Asumsi jika tidak ada shipment, berarti belum dikirim.
+
+        return self.status == 'processing' and shipment_exists_and_not_shipped
+
+    def can_be_cancelled_before_payment(self):
+        """
+        Cek apakah order bisa dibatalkan sebelum pembayaran atau saat pembayaran pending.
+        """
+        return self.status in ['pending', 'pending_payment'] and self.payment_status == 'unpaid'
+    
