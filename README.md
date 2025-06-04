@@ -1,6 +1,6 @@
 # PetShopin - Platform E-Commerce Kebutuhan Hewan Peliharaan
 
-![PetShopin Logo](app/static/images/logo.png) {# GANTI DENGAN PATH LOGO ANDA YANG BENAR #}
+![PetShopin Logo](app/static/images/logo.png)
 
 Selamat datang di PetShopin! Ini adalah aplikasi web e-commerce yang dirancang khusus untuk memenuhi semua kebutuhan hewan peliharaan kesayangan Anda. Dibangun dengan Flask (Python) dan diintegrasikan dengan template modern, PetShopin menawarkan pengalaman berbelanja yang mudah dan menyenangkan.
 
