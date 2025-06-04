@@ -1,0 +1,167 @@
+{% extends 'base.html' %} {# Pastikan ini adalah base.html yang sudah terintegrasi Famms #}
+
+{% block title %}{{ title }} - PetShopin{% endblock %}
+
+{% block page_title %}{{ page_main_title }}{% endblock %} {# Judul untuk inner_page_head di base.html #}
+
+{% block head_extra %}
+<style>
+    .about-section-content {
+        padding: 2rem 0; /* Padding atas dan bawah untuk konten */
+    }
+    .about-section-content h3 {
+        font-weight: 600;
+        color: var(--navbar-text-color, #333); /* Warna heading section */
+        margin-bottom: 1rem;
+        font-size: 1.75rem;
+    }
+    .about-section-content p {
+        font-size: 1rem;
+        line-height: 1.7;
+        color: #555;
+        margin-bottom: 1.25rem;
+    }
+    .why-shop-condensed .box { /* Versi lebih ringkas dari why_section */
+        text-align: center;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        background-color: #f8f9fa; /* Background lembut untuk box */
+        border-radius: .375rem;
+        border: 1px solid #e9ecef;
+        min-height: 220px; /* Agar tinggi box konsisten */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start; /* Konten mulai dari atas */
+    }
+    .why-shop-condensed .box .img-box {
+        margin-bottom: 1rem;
+        color: var(--petshop-green-primary); /* Warna ikon */
+    }
+    .why-shop-condensed .box .detail-box h5 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: var(--navbar-text-color);
+    }
+    .why-shop-condensed .box .detail-box p {
+        font-size: 0.875rem;
+        color: #6c757d;
+        line-height: 1.5;
+    }
+    .team-section img { /* Jika Anda menambahkan bagian tim */
+        width: 150px;
+        height: 150px;
+        object-fit: cover;
+        border-radius: 50%;
+        margin-bottom: 1rem;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container about-section-content">
+    <div class="row justify-content-center">
+        <div class="col-lg-10 col-xl-9"> {# Kolom konten dibuat lebih fokus #}
+
+            {# Anda bisa menambahkan gambar representatif di sini jika mau #}
+            {# <div class="text-center mb-4">
+                <img src="{{ url_for('static', filename='famms_template/images/about_us_banner.jpg') }}" alt="Tentang PetShopin" class="img-fluid rounded shadow-sm" style="max-height: 350px; width:auto;">
+            </div> #}
+
+            <div class="mb-5">
+                <h3 class="text-center">Selamat Datang di PetShopin!</h3>
+                <p class="lead text-center text-muted">Sahabat Terbaik untuk Kebutuhan Hewan Peliharaan Anda.</p>
+                <p>
+                    Di PetShopin, kami percaya bahwa hewan peliharaan adalah bagian tak terpisahkan dari keluarga. Mereka memberikan kita cinta tanpa syarat, kegembiraan, dan persahabatan yang tulus. Oleh karena itu, kami berkomitmen untuk menyediakan produk dan layanan terbaik demi kesehatan, kebahagiaan, dan kesejahteraan hewan kesayangan Anda.
+                </p>
+                <p>
+                    Berawal dari kecintaan kami terhadap hewan, PetShopin didirikan dengan misi sederhana: menjadi toko serba ada yang menyediakan semua kebutuhan hewan peliharaan dengan kualitas terjamin, harga terjangkau, dan pelayanan yang ramah. Kami memahami betapa pentingnya memberikan nutrisi terbaik, mainan yang aman dan menyenangkan, serta perawatan yang tepat untuk sahabat berbulu Anda.
+                </p>
+            </div>
+
+            <hr class="my-5">
+
+            <div class="mb-5 why-shop-condensed">
+                <h3 class="text-center mb-4">Kenapa Memilih PetShopin?</h3>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="box">
+                            <div class="img-box">
+                                <i class="fa fa-check-circle fa-3x"></i>
+                            </div>
+                            <div class="detail-box">
+                                <h5>Produk Berkualitas & Terjamin</h5>
+                                <p>Kami hanya menyediakan produk original dari merek terpercaya yang aman dan bernutrisi untuk hewan peliharaan Anda.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="box">
+                            <div class="img-box">
+                                <i class="fa fa-heart fa-3x"></i>
+                            </div>
+                            <div class="detail-box">
+                                <h5>Pelayanan Sepenuh Hati</h5>
+                                <p>Tim kami yang ramah dan berpengetahuan siap membantu Anda menemukan produk yang paling sesuai dengan kebutuhan spesifik anabul Anda.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="box">
+                            <div class="img-box">
+                                <i class="fa fa-shopping-basket fa-3x"></i>
+                            </div>
+                            <div class="detail-box">
+                                <h5>Pilihan Lengkap & Harga Bersaing</h5>
+                                <p>Temukan beragam pilihan makanan, aksesoris, mainan, dan perlengkapan perawatan dengan harga terbaik di PetShopin.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {# Bagian Tim (Opsional) #}
+            {# <hr class="my-5">
+            <div class="mb-5 team-section">
+                <h3 class="text-center mb-4">Tim Kami</h3>
+                <p class="text-center text-muted mb-4">Kami adalah para pecinta hewan yang berdedikasi untuk melayani Anda dan hewan kesayangan Anda.</p>
+                <div class="row text-center">
+                    <div class="col-md-4">
+                        <img src="{{ url_for('static', filename='famms_template/images/team_member_1.jpg') }}" alt="Anggota Tim 1">
+                        <h5>Nama Anggota 1</h5>
+                        <p class="text-muted small">Posisi</p>
+                    </div>
+                    <div class="col-md-4">
+                        <img src="{{ url_for('static', filename='famms_template/images/team_member_2.jpg') }}" alt="Anggota Tim 2">
+                        <h5>Nama Anggota 2</h5>
+                        <p class="text-muted small">Posisi</p>
+                    </div>
+                    <div class="col-md-4">
+                        <img src="{{ url_for('static', filename='famms_template/images/team_member_3.jpg') }}" alt="Anggota Tim 3">
+                        <h5>Nama Anggota 3</h5>
+                        <p class="text-muted small">Posisi</p>
+                    </div>
+                </div>
+            </div> #}
+
+            <hr class="my-5">
+
+            <div class="text-center">
+                <p>
+                    Terima kasih telah memilih PetShopin sebagai partner terpercaya untuk merawat hewan kesayangan Anda. Kami berharap dapat melayani Anda!
+                </p>
+                <a href="{{ url_for('products.product_list') }}" class="btn btn-lg mt-3" style="background-color: var(--petshop-green-primary); border-color: var(--petshop-green-primary); color: white;">
+                    <i class="fa fa-shopping-bag"></i> Lihat Produk Kami
+                </a>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts_page %}
+{{ super() if super }}
+{% endblock %}

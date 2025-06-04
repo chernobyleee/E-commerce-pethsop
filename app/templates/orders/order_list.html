@@ -1,88 +1,159 @@
-{% extends 'base.html' %}
+{% extends 'base.html' %} {# Pastikan ini adalah base.html yang sudah terintegrasi dengan Famms #}
 
-{% block title %}Daftar Pesanan Anda{% endblock %}
+{% block title %}Daftar Pesanan Saya - PetShopin{% endblock %}
+
+{% block page_title %}Daftar Pesanan Saya{% endblock %} {# Untuk inner_page_head di base.html #}
+
+{% block head_extra %}
+<style>
+    .order-list-page .table th {
+        font-weight: 500;
+        font-size: 0.9rem;
+        background-color: #f8f9fa; /* Warna header tabel lebih terang */
+        color: #333;
+        white-space: nowrap; /* Mencegah teks di header wrap */
+    }
+    .order-list-page .table td {
+        font-size: 0.9rem;
+        vertical-align: middle;
+    }
+    .order-list-page .table .badge {
+        font-size: 0.8rem;
+        padding: .35em .6em;
+    }
+    .order-list-page .btn-sm {
+        font-size: 0.8rem;
+        padding: .25rem .6rem;
+    }
+    .order-list-page .table tbody tr:hover {
+        background-color: #f8f9fa; /* Efek hover pada baris tabel */
+    }
+    .pagination .page-item.active .page-link { /* Warna pagination aktif */
+        background-color: var(--petshop-green-primary);
+        border-color: var(--petshop-green-primary);
+        color: white;
+    }
+    .pagination .page-link {
+        color: var(--petshop-green-primary); /* Warna link pagination */
+    }
+    .pagination .page-link:hover {
+        color: var(--petshop-green-darker);
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<h1 class="mb-4">Daftar Pesanan Anda</h1>
+<div class="container order-list-page py-4">
+    {# Judul halaman sudah diurus oleh inner_page_head dari base.html #}
+    {# <h1 class="mb-4">Daftar Pesanan Anda</h1> #}
 
-{% if orders.items %}
-<div class="table-responsive">
-    <table class="table table-hover table-striped">
-        <thead>
-            <tr>
-                <th>Invoice</th>
-                <th>Tanggal Order</th>
-                <th>Total</th>
-                <th>Status</th>
-                <th>Aksi</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for order in orders.items %}
-            <tr>
-                <td>{{ order.invoice_number }}</td>
-                <td>{{ order.created_at.strftime('%d-%m-%Y %H:%M') }}</td>
-                <td>Rp {{ '{:,.0f}'.format(order.total) }}</td>
-                <td>
-                    {% if order.status == 'pending' or order.status == 'pending_payment' %} {# Perbarui kondisi ini #}
-                        <span class="badge bg-warning text-dark">Pending Pembayaran</span>
-                    {% elif order.status == 'paid' %}
-                        <span class="badge bg-success">Paid</span>
-                    {% elif order.status == 'shipped' %}
-                        <span class="badge bg-info text-dark">Shipped</span>
-                    {% elif order.status == 'completed' %}
-                        <span class="badge bg-primary">Completed</span>
-                    {% elif order.status == 'cancelled' %}
-                        <span class="badge bg-danger">Cancelled</span>
-                    {% elif order.status == 'failed' %}
-                        <span class="badge bg-danger">Failed</span>
+    {% include '_messages.html' %} {# Untuk menampilkan flash messages jika ada #}
+
+    {% if orders and orders.items %}
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-light py-3">
+            <h5 class="mb-0"><i class="fa fa-list-ul me-2" style="color: var(--petshop-green-primary);"></i>Riwayat Pesanan</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0"> {# table-hover untuk efek hover #}
+                    <thead>
+                        <tr>
+                            <th class="ps-3">Invoice</th>
+                            <th>Tanggal Order</th>
+                            <th class="text-end">Total</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center pe-3">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders.items %}
+                        <tr>
+                            <td class="ps-3 fw-bold">
+                                <a href="{{ url_for('orders.order_detail', order_id=order.id) }}" style="color: var(--petshop-green-primary); text-decoration: none;">
+                                    #{{ order.invoice_number }}
+                                </a>
+                            </td>
+                            <td>{{ order.created_at.strftime('%d %b %Y, %H:%M') }}</td> {# Format tanggal lebih singkat #}
+                            <td class="text-end">Rp {{ '{:,.0f}'.format(order.total) }}</td>
+                            <td class="text-center">
+                                {% if order.status == 'pending' or order.status == 'pending_payment' %}
+                                    <span class="badge" style="background-color: #ffc107; color: #333;">Menunggu Pembayaran</span>
+                                {% elif order.status == 'processing' %}
+                                    <span class="badge" style="background-color: #17a2b8; color: white;">Diproses</span>
+                                {% elif order.status == 'shipped' %}
+                                    <span class="badge" style="background-color: #0d6efd; color: white;">Dikirim</span> {# Warna biru untuk shipped #}
+                                {% elif order.status == 'completed' %}
+                                    <span class="badge" style="background-color: var(--petshop-green-primary); color: white;">Selesai</span>
+                                {% elif order.status == 'cancelled' %}
+                                    <span class="badge bg-danger text-white">Dibatalkan</span>
+                                {% elif order.status == 'failed' %}
+                                    <span class="badge bg-danger text-white">Gagal</span>
+                                {% else %}
+                                    <span class="badge bg-secondary text-white">{{ order.status.replace('_',' ')|capitalize }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center pe-3">
+                                <a href="{{ url_for('orders.order_detail', order_id=order.id) }}" class="btn btn-sm btn-outline-secondary me-1" title="Lihat Detail">
+                                    <i class="fa fa-eye"></i> Detail
+                                </a>
+                                {% if order.status == 'pending' or order.status == 'pending_payment' %}
+                                    <a href="{{ url_for('orders.payment', order_id=order.id) }}" class="btn btn-sm ms-1" style="background-color: var(--petshop-green-primary); border-color: var(--petshop-green-primary); color:white;" title="Lanjutkan Pembayaran">
+                                        <i class="fa fa-credit-card"></i> Bayar
+                                    </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {# Pagination Links #}
+    {% if orders.pages and orders.pages > 1 %}
+    <nav aria-label="Page navigation pesanan" class="mt-4">
+        <ul class="pagination justify-content-center">
+            <li class="page-item {% if not orders.has_prev %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('orders.order_list', page=orders.prev_num) if orders.has_prev else '#' }}" aria-label="Sebelumnya">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            {% for page_num in orders.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                {% if page_num %}
+                    {% if page_num == orders.page %}
+                        <li class="page-item active"><a class="page-link" href="#">{{ page_num }}</a></li>
                     {% else %}
-                        <span class="badge bg-secondary">{{ order.status.capitalize() }}</span>
+                        <li class="page-item"><a class="page-link" href="{{ url_for('orders.order_list', page=page_num) }}">{{ page_num }}</a></li>
                     {% endif %}
-                </td>
-                <td>
-                    <a href="{{ url_for('orders.order_detail', order_id=order.id) }}" class="btn btn-sm btn-primary">Detail</a>
-                    {# Tombol ini akan mengarahkan ke halaman pembayaran yang sudah kita perbaiki #}
-                    {% if order.status == 'pending' or order.status == 'pending_payment' %} {# Perbarui kondisi ini #}
-                        <a href="{{ url_for('orders.payment', order_id=order.id) }}" class="btn btn-sm btn-success ms-2">Lanjutkan Bayar</a>
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-
-<nav aria-label="Page navigation" class="mt-4">
-    <ul class="pagination justify-content-center">
-        <li class="page-item {% if not orders.has_prev %}disabled{% endif %}">
-            <a class="page-link" href="{{ url_for('orders.order_list', page=orders.prev_num) }}" aria-label="Previous">
-                <span aria-hidden="true">&laquo;</span>
-            </a>
-        </li>
-        {% for page_num in orders.iter_pages() %}
-            {% if page_num %}
-                {% if page_num == orders.page %}
-                    <li class="page-item active"><a class="page-link" href="#">{{ page_num }}</a></li>
                 {% else %}
-                    <li class="page-item"><a class="page-link" href="{{ url_for('orders.order_list', page=page_num) }}">{{ page_num }}</a></li>
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
                 {% endif %}
-            {% else %}
-                <li class="page-item disabled"><a class="page-link" href="#">...</a></li>
-            {% endif %}
-        {% endfor %}
-        <li class="page-item {% if not orders.has_next %}disabled{% endif %}">
-            <a class="page-link" href="{{ url_for('orders.order_list', page=orders.next_num) }}" aria-label="Next">
-                <span aria-hidden="true">&raquo;</span>
-            </a>
-        </li>
-    </ul>
-</nav>
+            {% endfor %}
+            <li class="page-item {% if not orders.has_next %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('orders.order_list', page=orders.next_num) if orders.has_next else '#' }}" aria-label="Berikutnya">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    {% endif %}
 
-{% else %}
-<div class="alert alert-info text-center" role="alert">
-    Anda belum memiliki pesanan.
+    {% else %}
+    <div class="text-center py-5 my-5">
+        <i class="fa fa-file-text-o fa-4x text-muted mb-3" style="color: #ccc !important;"></i>
+        <h3 class="mb-3">Anda Belum Memiliki Riwayat Pesanan</h3>
+        <p class="text-muted lead">Semua pesanan yang Anda buat akan muncul di sini.</p>
+        <a href="{{ url_for('main.home') }}" class="btn btn-lg mt-3" style="background-color: var(--petshop-green-primary); border-color: var(--petshop-green-primary); color: white;">
+            <i class="fa fa-shopping-bag"></i> Mulai Berbelanja
+        </a>
+    </div>
+    {% endif %}
+
 </div>
-{% endif %}
+{% endblock %}
 
+{% block scripts_page %}
+{# Tidak ada JS spesifik untuk halaman ini saat ini #}
 {% endblock %}

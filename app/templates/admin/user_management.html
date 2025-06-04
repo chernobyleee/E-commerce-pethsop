@@ -1,80 +1,191 @@
-{# app/templates/admin/user_management.html #}
-{% extends 'base.html' %}
+{% extends 'base.html' %} {# Pastikan ini adalah base.html yang sudah terintegrasi Famms #}
 
-{% block title %}Manage Users{% endblock %}
+{% block title %}Kelola Pengguna - PetShopin Admin{% endblock %}
+
+{# Halaman admin tidak menggunakan inner_page_head dari base.html #}
+{% block top_content_section %}{% endblock %}
+{% block page_title %}{% endblock %} 
+
+{% block head_extra %}
+<style>
+    .admin-page-content {
+        padding-top: 1.5rem;
+        padding-bottom: 1.5rem;
+    }
+    .admin-page-content .page-header {
+        margin-bottom: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .admin-page-content .page-title {
+        font-size: 1.75rem;
+        font-weight: 600;
+        color: #4a5568;
+    }
+    .admin-page-content .card {
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 .125rem .25rem rgba(0,0,0,.075)!important;
+    }
+    .admin-page-content .card-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #e2e8f0;
+        font-weight: 500;
+        color: var(--navbar-text-color);
+        padding: .75rem 1.25rem;
+        font-size: 1.05rem;
+    }
+    .admin-table th {
+        font-size: 0.85rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: .5px;
+        background-color: #f8f9fa;
+        color: #333;
+        white-space: nowrap;
+        padding: .9rem .75rem;
+    }
+    .admin-table td {
+        font-size: 0.9rem;
+        vertical-align: middle;
+        padding: .75rem;
+    }
+    .admin-table .badge {
+        font-size: 0.8rem;
+        padding: .35em .6em;
+    }
+    .admin-table .btn-sm {
+        font-size: 0.8rem;
+        padding: .2rem .5rem;
+    }
+    .admin-table .action-buttons form {
+        margin-bottom: 0;
+    }
+    .pagination .page-item.active .page-link {
+        background-color: var(--petshop-green-primary);
+        border-color: var(--petshop-green-primary);
+        color: white;
+    }
+    .pagination .page-link {
+        color: var(--petshop-green-primary);
+    }
+    .pagination .page-link:hover {
+        color: var(--petshop-green-darker);
+    }
+    .btn-add-new { /* Tombol tambah baru */
+        background-color: var(--petshop-green-primary);
+        border-color: var(--petshop-green-primary);
+        color: white;
+        font-weight: 500;
+    }
+    .btn-add-new:hover {
+        background-color: var(--petshop-green-darker);
+        border-color: var(--petshop-green-darker);
+        color: white;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<h1 class="mb-4">User Management</h1>
+<div class="container-fluid admin-page-content px-md-4">
+    <div class="page-header">
+        <h1 class="page-title">Manajemen Pengguna</h1>
+        {# Tombol Tambah Pengguna Baru (jika ada fungsionalitasnya) #}
+        {# <a href="{{ url_for('admin.add_user') }}" class="btn btn-add-new"><i class="fa fa-user-plus"></i> Tambah Pengguna Baru</a> #}
+    </div>
 
-{% include '_messages.html' %} {# Pastikan Anda memiliki partial untuk menampilkan flash messages #}
+    {% include '_messages.html' %}
 
-<div class="table-responsive">
-    <table class="table table-striped table-bordered">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Phone Number</th>
-                <th>Role</th>
-                <th>Joined At</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for user in users.items %}
-            <tr>
-                <td>{{ user.name }}</td>
-                <td>{{ user.email }}</td>
-                <td>{{ user.phone_number or '-' }}</td>
-                <td><span class="badge {% if user.role == 'admin' %}bg-danger{% else %}bg-primary{% endif %}">{{ user.role.capitalize() }}</span></td>
-                <td>{{ user.created_at.strftime('%d %b %Y %H:%M') }}</td>
-                <td>
-                    <a href="{{ url_for('admin.edit_user', user_id=user.id) }}" class="btn btn-sm btn-warning me-2">
-                        <i class="fas fa-edit"></i> Edit
-                    </a>
-                    {% if user.id != current_user.id %} {# Tidak bisa menghapus akun sendiri #}
-                    <form action="{{ url_for('admin.delete_user', user_id=user.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this user? This action cannot be undone.');">
-                        <button type="submit" class="btn btn-sm btn-danger">
-                            <i class="fas fa-trash-alt"></i> Delete
-                        </button>
-                    </form>
-                    {% endif %}
-                </td>
-            </tr>
+    <div class="card shadow-sm border-0">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>Daftar Pengguna Terdaftar</span>
+            {# Tempat untuk filter jika ada #}
+        </div>
+        <div class="card-body p-0">
+            {% if users.items %}
+            <div class="table-responsive">
+                <table class="table table-hover table-striped admin-table mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-3">Nama</th>
+                            <th>Email</th>
+                            <th>No. Telepon</th>
+                            <th class="text-center">Role</th>
+                            <th>Bergabung Pada</th>
+                            <th class="text-center pe-3">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user_item in users.items %} {# Mengganti 'user' menjadi 'user_item' untuk menghindari konflik dengan current_user global #}
+                        <tr>
+                            <td class="ps-3 fw-bold">{{ user_item.name }}</td>
+                            <td>{{ user_item.email }}</td>
+                            <td>{{ user_item.phone_number or '-' }}</td>
+                            <td class="text-center">
+                                <span class="badge {% if user_item.role == 'admin' %}bg-danger{% elif user_item.role == 'customer' %}bg-success{% else %}bg-secondary{% endif %}">
+                                    {{ user_item.role.capitalize() }}
+                                </span>
+                            </td>
+                            <td>{{ user_item.created_at.strftime('%d %b %Y, %H:%M') if user_item.created_at else '-' }}</td>
+                            <td class="text-center action-buttons pe-3">
+                                <a href="{{ url_for('admin.edit_user', user_id=user_item.id) }}" class="btn btn-sm btn-warning me-1" title="Edit Role Pengguna">
+                                    <i class="fa fa-shield"></i> Edit Role
+                                </a>
+                                {% if user_item.id != current_user.id %} {# Tidak bisa menghapus akun sendiri #}
+                                <form action="{{ url_for('admin.delete_user', user_id=user_item.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus pengguna \'{{ user_item.name }}\'? Aksi ini tidak dapat dibatalkan.');">
+                                    <button type="submit" class="btn btn-sm btn-danger" title="Hapus Pengguna">
+                                        <i class="fa fa-trash"></i> Hapus
+                                    </button>
+                                </form>
+                                {% else %}
+                                    <button type="button" class="btn btn-sm btn-danger" disabled title="Tidak dapat menghapus akun sendiri"><i class="fa fa-trash"></i> Hapus</button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
             {% else %}
-            <tr>
-                <td colspan="6" class="text-center">No users found.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-
-{# Pagination links #}
-<nav aria-label="Page navigation" class="mt-4">
-    <ul class="pagination justify-content-center">
-        <li class="page-item {% if not users.has_prev %}disabled{% endif %}">
-            <a class="page-link" href="{{ url_for('admin.user_management', page=users.prev_num) }}" aria-label="Previous">
-                <span aria-hidden="true">&laquo;</span>
-            </a>
-        </li>
-        {% for page_num in users.iter_pages() %}
-            {% if page_num %}
-                {% if page_num == users.page %}
-                    <li class="page-item active"><a class="page-link" href="#">{{ page_num }}</a></li>
-                {% else %}
-                    <li class="page-item"><a class="page-link" href="{{ url_for('admin.user_management', page=page_num) }}">{{ page_num }}</a></li>
-                {% endif %}
-            {% else %}
-                <li class="page-item disabled"><a class="page-link" href="#">...</a></li>
+            <div class="text-center p-4">
+                <p class="mb-0 text-muted">Belum ada pengguna yang terdaftar.</p>
+            </div>
             {% endif %}
-        {% endfor %}
-        <li class="page-item {% if not users.has_next %}disabled{% endif %}">
-            <a class="page-link" href="{{ url_for('admin.user_management', page=users.next_num) }}" aria-label="Next">
-                <span aria-hidden="true">&raquo;</span>
-            </a>
-        </li>
-    </ul>
-</nav>
+        </div>
 
+        {% if users and users.pages and users.pages > 1 %}
+        <div class="card-footer bg-light border-top-0">
+            <nav aria-label="Page navigation pengguna">
+                <ul class="pagination justify-content-center mb-0">
+                    <li class="page-item {% if not users.has_prev %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('admin.user_management', page=users.prev_num) if users.has_prev else '#' }}" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    {% for page_num in users.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                        {% if page_num %}
+                            {% if page_num == users.page %}
+                                <li class="page-item active"><a class="page-link" href="#">{{ page_num }}</a></li>
+                            {% else %}
+                                <li class="page-item"><a class="page-link" href="{{ url_for('admin.user_management', page=page_num) }}">{{ page_num }}</a></li>
+                            {% endif %}
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        {% endif %}
+                    {% endfor %}
+                    <li class="page-item {% if not users.has_next %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('admin.user_management', page=users.next_num) if users.has_next else '#' }}" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts_page %}
+{{ super() if super }}
 {% endblock %}

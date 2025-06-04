@@ -1,6 +1,6 @@
 # app/forms.py
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, TextAreaField, DecimalField, IntegerField, SelectField, BooleanField
+from wtforms import StringField, SubmitField, TextAreaField, DecimalField, IntegerField, SelectField, BooleanField,HiddenField
 from wtforms.validators import DataRequired, Email, Length, Optional, NumberRange, ValidationError
 from flask_wtf.file import FileField, FileAllowed, MultipleFileField # <<< IMPORT MultipleFileField
 from app.models.user import User
@@ -68,3 +68,11 @@ class CategoryForm(FlaskForm):
             category = Category.query.filter_by(name=name.data, deleted_at=None).first()
             if category:
                 raise ValidationError('That category name already exists. Please choose a different one.')
+            
+class CancellationRequestForm(FlaskForm):
+    reason = TextAreaField('Alasan Pembatalan', 
+                           validators=[DataRequired(message="Alasan pembatalan tidak boleh kosong."), 
+                                       Length(min=10, max=500, message="Alasan harus antara 10 dan 500 karakter.")],
+                           render_kw={"rows": 4, "placeholder": "Mohon berikan alasan Anda membatalkan pesanan ini..."})
+    order_id = HiddenField() # Untuk menyimpan order_id jika diperlukan di form
+    submit = SubmitField('Kirim Permintaan Pembatalan')

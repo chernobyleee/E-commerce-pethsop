@@ -1,53 +1,122 @@
-{# app/templates/admin/user_form.html #}
 {% extends 'base.html' %}
+{% import "macros/_form_helpers.html" as form_helpers %} {# Pastikan path macro ini benar #}
 
-{% block title %}{{ title }}{% endblock %}
+{% block title %}{{ title }} - PetShopin Admin{% endblock %}
+
+{# Halaman admin tidak menggunakan inner_page_head dari base.html #}
+{% block top_content_section %}{% endblock %}
+{% block page_title %}{% endblock %} 
+
+{% block head_extra %}
+<style>
+    .admin-page-content {
+        padding-top: 1.5rem;
+        padding-bottom: 1.5rem;
+    }
+    .admin-page-content .page-header {
+        margin-bottom: 1.5rem;
+    }
+    .admin-page-content .page-title {
+        font-size: 1.75rem;
+        font-weight: 600;
+        color: #4a5568;
+    }
+    .admin-page-content .card {
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 .125rem .25rem rgba(0,0,0,.075)!important;
+    }
+    .admin-page-content .card-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #e2e8f0;
+        font-weight: 500;
+        color: var(--navbar-text-color);
+        padding: .75rem 1.25rem;
+        font-size: 1.05rem;
+    }
+    .admin-page-content .form-label {
+        font-weight: 500;
+        font-size: 0.9rem;
+    }
+    .admin-page-content .form-control,
+    .admin-page-content .form-select {
+        font-size: 0.9rem;
+    }
+    .admin-page-content .form-control:disabled, 
+    .admin-page-content .form-control[readonly] {
+        background-color: #e9ecef; /* Warna standar bootstrap untuk disabled */
+        opacity: 1;
+    }
+    .admin-page-content .btn-submit-user-role {
+        background-color: var(--petshop-green-primary);
+        border-color: var(--petshop-green-primary);
+        color: white;
+        font-weight: 500;
+    }
+    .admin-page-content .btn-submit-user-role:hover {
+        background-color: var(--petshop-green-darker);
+        border-color: var(--petshop-green-darker);
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<h1 class="mb-4">{{ title }}</h1>
+<div class="container-fluid admin-page-content px-md-4">
+    <div class="page-header">
+        <h1 class="page-title">{{ title }}</h1>
+    </div>
 
-{% include '_messages.html' %}
+    {% include '_messages.html' %}
 
-<div class="row">
-    <div class="col-md-6">
-        <form method="POST">
-            {{ form.hidden_tag() }}
-            <div class="mb-3">
-                {{ form.name.label(class="form-label") }}
-                {# Tambahkan atribut disabled di sini #}
-                {{ form.name(class="form-control", disabled=true) }} 
-                {% for error in form.name.errors %}
-                    <div class="text-danger">{{ error }}</div>
-                {% endfor %}
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-7">
+            <div class="card shadow-sm border-0">
+                <div class="card-header">
+                    <i class="fa fa-user-shield me-2" style="color: var(--petshop-green-primary);"></i>
+                    Edit Role Pengguna: <strong>{{ form.name.data or 'Pengguna' }}</strong>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            {{ form.name.label(class="form-label") }}
+                            {{ form.name(class="form-control form-control-sm", readonly=true) }} {# Dibuat readonly agar tidak bisa diedit tapi nilainya tetap dikirim #}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.email.label(class="form-label") }}
+                            {{ form.email(class="form-control form-control-sm", readonly=true) }}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.phone_number.label(class="form-label") }}
+                            {{ form.phone_number(class="form-control form-control-sm", readonly=true) }}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.role.label(class="form-label") }}
+                            {{ form.role(class="form-select form-select-sm") }} {# Hanya field role yang bisa diedit #}
+                            {% for error in form.role.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        
+                        <hr class="my-4">
+                        <div class="d-flex justify-content-end">
+                            <a href="{{ url_for('admin.user_management') }}" class="btn btn-outline-secondary me-2">Batal</a>
+                            {# Mengambil label dari tombol submit di form Flask Anda #}
+                            <button type="submit" class="btn btn-submit-user-role">
+                                <i class="fa fa-save"></i> {{ form.submit.label.text if form.submit else 'Simpan Perubahan' }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
-            <div class="mb-3">
-                {{ form.email.label(class="form-label") }}
-                {# Tambahkan atribut disabled di sini #}
-                {{ form.email(class="form-control", disabled=true) }}
-                {% for error in form.email.errors %}
-                    <div class="text-danger">{{ error }}</div>
-                {% endfor %}
-            </div>
-            <div class="mb-3">
-                {{ form.phone_number.label(class="form-label") }}
-                {# Tambahkan atribut disabled di sini #}
-                {{ form.phone_number(class="form-control", disabled=true) }}
-                {% for error in form.phone_number.errors %}
-                    <div class="text-danger">{{ error }}</div>
-                {% endfor %}
-            </div>
-            <div class="mb-3">
-                {{ form.role.label(class="form-label") }}
-                {# Field Role TIDAK perlu disabled, karena ini yang ingin diubah #}
-                {{ form.role(class="form-select") }}
-                {% for error in form.role.errors %}
-                    <div class="text-danger">{{ error }}</div>
-                {% endfor %}
-            </div>
-            
-            <button type="submit" class="btn btn-primary">{{ form.submit.label }}</button>
-            <a href="{{ url_for('admin.user_management') }}" class="btn btn-secondary">Cancel</a>
-        </form>
+        </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts_page %}
+{{ super() if super }}
 {% endblock %}

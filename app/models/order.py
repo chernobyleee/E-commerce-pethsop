@@ -22,7 +22,9 @@ class Order(db.Model):
     shipped_at = db.Column(db.DateTime, nullable=True)
     delivered_at = db.Column(db.DateTime, nullable=True) # Ini adalah delivered yang diupdate manual/otomatis
     cancelled_at = db.Column(db.DateTime, nullable=True)
-
+    
+    cancellation_reason = db.Column(db.Text, nullable=True)
+    cancellation_requested_at = db.Column(db.DateTime, nullable=True) 
     # Kolom BARU
     delivered_api_at = db.Column(db.DateTime, nullable=True) # Tanggal status 'DELIVERED' terakhir dari API tracking
     received_at = db.Column(db.DateTime, nullable=True) # Tanggal ketika customer klik 'Produk Diterima' atau otomatis
@@ -70,3 +72,12 @@ class Order(db.Model):
         """
         return self.status in ['pending', 'pending_payment'] and self.payment_status == 'unpaid'
     
+    
+    def can_request_cancellation(self):
+        """
+        Menentukan apakah pelanggan bisa meminta pembatalan.
+        Contoh: Bisa jika statusnya 'pending_payment', 'paid', atau 'processing'
+                 DAN belum 'shipped', 'completed', atau 'cancelled'.
+        """
+        return self.status in ['pending_payment', 'paid', 'processing'] and \
+               self.status not in ['shipped', 'completed', 'cancelled']

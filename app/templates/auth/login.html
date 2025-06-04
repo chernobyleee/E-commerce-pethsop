@@ -1,33 +1,209 @@
-{% extends 'base.html' %}
+{% extends 'base.html' %} {# Pastikan ini adalah base.html yang sudah terintegrasi Famms #}
 
-{% block title %}Login{% endblock %}
+{% block title %}Login - PetShopin{% endblock %}
+
+{# Kita tidak menggunakan inner_page_head untuk halaman login/register agar bisa full-height #}
+{% block top_content_section %}{% endblock %} 
+{% block page_title %}{% endblock %}
+
+
+{% block head_extra %}
+<style>
+    .auth-page-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: calc(100vh - var(--body-padding-top, 75px) - 70px); /* 70px approx footer height */
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+        background-color: #f4f7f6; /* Warna background halaman yang lembut */
+    }
+    .auth-container {
+        display: flex;
+        max-width: 900px; /* Lebar maksimum kontainer login/register */
+        width: 100%;
+        background-color: #ffffff;
+        border-radius: 10px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        overflow: hidden; /* Untuk border-radius pada panel */
+    }
+    .auth-form-panel, .auth-overlay-panel {
+        padding: 40px 30px; /* Padding yang lebih besar */
+    }
+    .auth-form-panel {
+        flex: 1.2; /* Form sedikit lebih lebar */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    .auth-overlay-panel {
+        flex: 1;
+        background: linear-gradient(to right, var(--petshop-green-primary), var(--petshop-green-darker));
+        color: white;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+    }
+    .auth-overlay-panel h1 {
+        font-weight: bold;
+        margin-bottom: 15px;
+        font-size: 2.2rem;
+    }
+    .auth-overlay-panel p {
+        font-size: 1rem;
+        line-height: 1.6;
+        margin-bottom: 25px;
+    }
+    .auth-title {
+        font-weight: 700;
+        margin-bottom: 1rem;
+        color: #333;
+        font-size: 2rem;
+    }
+    .auth-form-panel .form-control {
+        background-color: #f0f0f0;
+        border: none;
+        padding: 12px 15px;
+        margin-bottom: 10px;
+        width: 100%;
+        border-radius: 5px;
+        font-size: 0.9rem;
+    }
+    .auth-form-panel .form-control:focus {
+        background-color: #e9e9e9;
+        outline: none;
+        box-shadow: none;
+    }
+    .auth-form-panel .btn-submit {
+        border-radius: 20px;
+        border: 1px solid var(--petshop-green-primary);
+        background-color: var(--petshop-green-primary);
+        color: #FFFFFF;
+        font-size: 0.9rem;
+        font-weight: bold;
+        padding: 12px 45px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        transition: transform 80ms ease-in;
+    }
+    .auth-form-panel .btn-submit:active {
+        transform: scale(0.95);
+    }
+    .auth-form-panel .btn-submit:focus {
+        outline: none;
+    }
+    .auth-form-panel .btn-outline { /* Untuk tombol di overlay panel */
+        border-radius: 20px;
+        border: 1px solid #FFFFFF;
+        background-color: transparent;
+        color: #FFFFFF;
+        font-size: 0.9rem;
+        font-weight: bold;
+        padding: 12px 45px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+    }
+     .auth-form-panel .btn-outline:hover {
+        background-color: rgba(255,255,255,0.1);
+     }
+
+    .social-container a {
+        border: 1px solid #DDDDDD;
+        border-radius: 50%;
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        margin: 0 5px;
+        height: 40px;
+        width: 40px;
+        color: #333;
+        transition: background-color 0.3s ease;
+    }
+    .social-container a:hover {
+        background-color: #eee;
+    }
+    .auth-form-panel .text-muted-link {
+        font-size: 0.85rem;
+        color: #6c757d;
+        text-decoration: none;
+    }
+    .auth-form-panel .text-muted-link:hover {
+        text-decoration: underline;
+    }
+    .auth-form-panel .switch-auth-link {
+        font-weight: bold;
+        color: var(--petshop-green-primary);
+        text-decoration: none;
+    }
+     .auth-form-panel .switch-auth-link:hover {
+        text-decoration: underline;
+     }
+
+    /* Responsiveness */
+    @media (max-width: 767.98px) {
+        .auth-container {
+            flex-direction: column;
+            margin: 20px; /* Agar tidak terlalu mepet di mobile */
+        }
+        .auth-form-panel, .auth-overlay-panel {
+            flex: none; /* Hapus flex grow agar bisa stack */
+            padding: 30px 20px;
+        }
+        .auth-overlay-panel {
+             min-height: 200px; /* Tinggi minimal untuk overlay di mobile */
+        }
+        .auth-title {
+            font-size: 1.8rem;
+        }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card mt-5">
-            <div class="card-header text-center">
-                <h3>Login</h3>
-            </div>
-            <div class="card-body">
-                <form method="POST" action="{{ url_for('users.login') }}">
-                    <div class="mb-3">
-                        <label for="email" class="form-label">Email address</label>
-                        <input type="email" class="form-control" id="email" name="email" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="password" class="form-label">Password</label>
-                        <input type="password" class="form-control" id="password" name="password" required>
-                    </div>
-                    <div class="mb-3 form-check">
-                        <input type="checkbox" class="form-check-input" id="remember_me" name="remember_me">
-                        <label class="form-check-label" for="remember_me">Remember me</label>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100">Login</button>
-                </form>
-                <p class="text-center mt-3">Don't have an account? <a href="{{ url_for('users.register') }}">Register here</a></p>
-            </div>
+<div class="auth-page-wrapper">
+    <div class="auth-container">
+        <div class="auth-form-panel">
+            <form method="POST" action="{{ url_for('users.login') }}">
+                <h1 class="auth-title">Sign In ke PetShopin</h1>
+                {# <div class="social-container text-center my-3">
+                    <a href="#" class="social"><i class="fa fa-facebook-f"></i></a>
+                    <a href="#" class="social"><i class="fa fa-google-plus"></i></a>
+                    <a href="#" class="social"><i class="fa fa-linkedin"></i></a>
+                </div>
+                <p class="text-center text-muted small">atau gunakan akun email Anda</p> #}
+                
+                <div class="mb-3">
+                    {# <label for="email" class="form-label visually-hidden">Email address</label> #}
+                    <input type="email" class="form-control" id="email" name="email" placeholder="Email" required value="{{ request.form.email or '' }}">
+                </div>
+                <div class="mb-3">
+                    {# <label for="password" class="form-label visually-hidden">Password</label> #}
+                    <input type="password" class="form-control" id="password" name="password" placeholder="Password" required>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+
+                    {# <a href="#" class="text-muted-link">Lupa kata sandi Anda?</a> #}
+                </div>
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-submit btn-lg btn-block">Login</button>
+                </div>
+            </form>
+            <p class="text-center mt-4 mb-0 small">Belum punya akun? 
+                <a href="{{ url_for('users.register') }}" class="switch-auth-link">Daftar di sini</a>
+            </p>
+        </div>
+        <div class="auth-overlay-panel">
+            <h1>Halo, Teman Petshopin!</h1>
+            <p>Belum punya akun? Daftar sekarang dan nikmati kemudahan berbelanja kebutuhan hewan kesayangan Anda di PetShopin!</p>
+            <a href="{{ url_for('users.register') }}" class="btn btn-submit text-warning" >Sign Up</a>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts_page %}
+{# Tidak ada JS spesifik untuk halaman ini, kecuali jika Anda ingin validasi frontend tambahan #}
+{{ super() if super }}
 {% endblock %}

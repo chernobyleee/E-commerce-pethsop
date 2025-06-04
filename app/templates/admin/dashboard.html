@@ -1,179 +1,178 @@
-{% extends 'base.html' %} {# Atau 'admin/admin_base.html' jika Anda punya #}
+{% extends 'base.html' %}
 
-{% block title %}{{ title }}{% endblock %}
+{% block title %}{{ title }} - PetShopin Admin{% endblock %}
+
+{# Halaman admin tidak menggunakan inner_page_head dari base.html #}
+{% block top_content_section %}{% endblock %}
+{% block page_title %}{% endblock %} 
+
+{% block head_extra %}
+<style>
+    .admin-dashboard-page {
+        padding-top: 1rem; 
+    }
+    .admin-dashboard-page .main-title {
+        font-size: 1.75rem;
+        font-weight: 600;
+        color: #4a5568; /* Warna judul lebih lembut */
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .admin-dashboard-page .stat-card {
+        border: 1px solid #e2e8f0; /* Border halus */
+        border-radius: .375rem; 
+        transition: transform .2s ease-in-out, box-shadow .2s ease-in-out;
+        margin-bottom: 1.5rem; 
+        color: white; 
+        overflow: hidden; /* Untuk efek hover yang rapi */
+    }
+    .admin-dashboard-page .stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 .5rem 1rem rgba(0,0,0,.1)!important;
+    }
+    .admin-dashboard-page .stat-card .card-body {
+        padding: 1.1rem 1.25rem; 
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .admin-dashboard-page .stat-card .stat-text .small-text {
+        font-size: 0.7rem; /* Lebih kecil lagi */
+        color: rgba(255,255,255,0.8);
+        text-transform: uppercase;
+        letter-spacing: .6px;
+        display: block; 
+        margin-bottom: .15rem;
+    }
+    .admin-dashboard-page .stat-card .stat-text .stat-number {
+        font-size: 1.5rem; /* Disesuaikan agar tidak terlalu besar jika banyak kartu */
+        font-weight: 700;
+        line-height: 1.1;
+    }
+    .admin-dashboard-page .stat-card .stat-icon i {
+        font-size: 2rem; /* Ikon sedikit lebih kecil */
+        opacity: 0.65;
+    }
+    .admin-dashboard-page .stat-card .card-footer {
+        background-color: rgba(0,0,0,0.1);
+        font-size: 0.75rem;
+        padding: 0.4rem 1.25rem;
+    }
+    .admin-dashboard-page .stat-card .card-footer a {
+        color: rgba(255,255,255,0.85);
+        text-decoration: none;
+    }
+    .admin-dashboard-page .stat-card .card-footer a:hover {
+        color: #ffffff;
+        text-decoration: underline;
+    }
+    .admin-dashboard-page .stat-card .card-footer .float-end {
+        float: right;
+    }
+
+    /* Warna Gradien Kartu */
+    .admin-dashboard-page .bg-c-blue { background: linear-gradient(45deg,#4e73df,#224abe); }
+    .admin-dashboard-page .bg-c-green-stat { background: linear-gradient(45deg, var(--petshop-green-primary), var(--petshop-green-darker)); }
+    .admin-dashboard-page .bg-c-yellow { background: linear-gradient(45deg,#f6c23e,#dda20a); color: #5a5c69 !important; }
+    .admin-dashboard-page .bg-c-yellow .stat-text .small-text,
+    .admin-dashboard-page .bg-c-yellow .card-footer a { color: rgba(0,0,0,0.8) !important; }
+    .admin-dashboard-page .bg-c-yellow .card-footer a:hover { color: #000000 !important; }
+    .admin-dashboard-page .bg-c-yellow .stat-icon i { opacity: 0.5; color: #5a5c69; }
+    
+    .admin-dashboard-page .bg-c-red { background: linear-gradient(45deg,#e74a3b,#c12e1f); }
+    .admin-dashboard-page .bg-c-info { background: linear-gradient(45deg,#36b9cc,#2a96a5); }
+    .admin-dashboard-page .bg-c-purple { background: linear-gradient(45deg,#5a5c69,#373840); }
+    .admin-dashboard-page .bg-c-orange { background: linear-gradient(45deg,#fd7e14,#f06a02); }
+    .admin-dashboard-page .bg-c-pink { background: linear-gradient(45deg,#e83e8c,#d11f6a); }
+
+
+    .admin-dashboard-page .activity-card .card-header { font-size: 1rem; background-color: #fff; border-bottom:1px solid #e3e6f0; color: #5a5c69;}
+    .admin-dashboard-page .activity-card .list-group-item { padding: .75rem 1.25rem; font-size: 0.9rem; border-bottom: 1px solid #e3e6f0; }
+    .admin-dashboard-page .activity-card .list-group-item:last-child { border-bottom: none; }
+    .admin-dashboard-page .activity-card .badge { font-size: 0.8rem; }
+    .admin-dashboard-page .sub-heading {
+        font-size: 1.2rem; /* Ukuran sub-judul section */
+        font-weight: 500;
+        color: #5a5c69;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #e3e6f0;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container-fluid px-4">
-    <h1 class="mt-4 mb-4">{{ title }}</h1>
+<div class="container-fluid admin-dashboard-page px-md-4">
+    <h1 class="main-title pt-3 pb-2">{{ title }}</h1>
 
-    {# Bagian Aktivitas Terbaru (Notifikasi Sederhana) #}
-    {% if recent_pending_payment_orders or recent_processing_orders %}
+    {% include '_messages.html' %}
+
+    {# Aktivitas Terbaru #}
+    {% if recent_pending_payment_orders or recent_processing_orders or recent_cancelled_for_refund %}
     <div class="row">
         <div class="col-xl-12">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <i class="fas fa-bell me-1"></i>
-                    Aktivitas Terbaru / Perlu Perhatian
+            <div class="card shadow-sm border-0 activity-card mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold" style="color: var(--petshop-green-primary);"><i class="fa fa-bell me-2"></i>Aktivitas Terbaru & Perlu Perhatian</h6>
                 </div>
-                <div class="card-body">
+                <ul class="list-group list-group-flush">
                     {% if recent_pending_payment_orders %}
-                        <p class="mb-1"><strong>Menunggu Pembayaran:</strong>
+                        <li class="list-group-item">
+                            <strong class="d-block mb-1">Menunggu Pembayaran:</strong>
                             {% for order in recent_pending_payment_orders %}
-                                <a href="{{ url_for('admin.admin_order_detail', order_id=order.id) }}" class="badge bg-warning text-dark me-1" title="Order pada {{ order.created_at.strftime('%d %b, %H:%M') }}">{{ order.invoice_number }}</a>
-                            {% endfor %}
-                        </p>
+                                <a href="{{ url_for('admin.admin_order_detail', order_id=order.id) }}" class="badge me-1 mb-1" style="background-color: #f6c23e; color: #5a5c69;" title="Order pada {{ order.created_at.strftime('%d %b, %H:%M') }}">{{ order.invoice_number }}</a>
+                            {% else %} <small class="text-muted fst-italic">Tidak ada.</small> {% endfor %}
+                        </li>
                     {% endif %}
                     {% if recent_processing_orders %}
-                        <p class="mb-0"><strong>Perlu Segera Diproses/Dikirim:</strong>
+                        <li class="list-group-item">
+                            <strong class="d-block mb-1">Perlu Segera Diproses:</strong>
                             {% for order in recent_processing_orders %}
-                                <a href="{{ url_for('admin.admin_order_detail', order_id=order.id) }}" class="badge bg-info text-dark me-1" title="Dibayar pada {{ order.paid_at.strftime('%d %b, %H:%M') if order.paid_at else 'N/A' }}">{{ order.invoice_number }}</a>
-                            {% endfor %}
-                        </p>
+                                <a href="{{ url_for('admin.admin_order_detail', order_id=order.id) }}" class="badge me-1 mb-1" style="background-color: #36b9cc; color: white;" title="Dibayar pada {{ order.paid_at.strftime('%d %b, %H:%M') if order.paid_at else 'N/A' }}">{{ order.invoice_number }}</a>
+                            {% else %} <small class="text-muted fst-italic">Tidak ada.</small> {% endfor %}
+                        </li>
                     {% endif %}
-                </div>
+                     {% if recent_cancelled_for_refund %}
+                        <li class="list-group-item">
+                            <strong class="d-block mb-1">Menunggu Proses Refund:</strong>
+                            {% for order in recent_cancelled_for_refund %}
+                                <a href="{{ url_for('admin.admin_order_detail', order_id=order.id) }}" class="badge bg-danger text-white me-1 mb-1" title="Dibatalkan pada {{ order.cancelled_at.strftime('%d %b, %H:%M') if order.cancelled_at else 'N/A' }}">{{ order.invoice_number }}</a>
+                            {% else %} <small class="text-muted fst-italic">Tidak ada.</small> {% endfor %}
+                        </li>
+                    {% endif %}
+                </ul>
             </div>
         </div>
     </div>
     {% endif %}
 
-    {# Baris untuk Statistik Penghasilan #}
-    <h3 class="mt-4 mb-3">Statistik Penghasilan</h3>
+    <h4 class="sub-heading">Statistik Penghasilan</h4>
     <div class="row">
-        <div class="col-xl-4 col-md-6 mb-4">
-            <div class="card bg-success text-white h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="text-white-75 small">Penghasilan Hari Ini</div>
-                            <div class="fs-4 fw-bold">Rp {{ '{:,.0f}'.format(total_revenue_today) }}</div>
-                        </div>
-                        <i class="fas fa-calendar-day fa-2x text-white-50"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-4 col-md-6 mb-4">
-            <div class="card bg-primary text-white h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="text-white-75 small">Penghasilan Bulan Ini</div>
-                            <div class="fs-4 fw-bold">Rp {{ '{:,.0f}'.format(total_revenue_this_month) }}</div>
-                        </div>
-                        <i class="fas fa-calendar-alt fa-2x text-white-50"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-4 col-md-6 mb-4">
-            <div class="card bg-dark text-white h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="text-white-75 small">Total Semua Penghasilan</div>
-                            <div class="fs-4 fw-bold">Rp {{ '{:,.0f}'.format(total_revenue_all_time) }}</div>
-                        </div>
-                        <i class="fas fa-landmark fa-2x text-white-50"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <div class="col-xl-4 col-md-6"><div class="card stat-card text-white bg-c-green-stat"><div class="card-body"><div class="stat-text"><span class="small-text">Penghasilan Hari Ini</span><h3 class="stat-number">Rp {{ '{:,.0f}'.format(total_revenue_today) }}</h3></div><div class="stat-icon"><i class="fa fa-calendar-day"></i></div></div></div></div>
+        <div class="col-xl-4 col-md-6"><div class="card stat-card text-white bg-c-green-stat"><div class="card-body"><div class="stat-text"><span class="small-text">Penghasilan Bulan Ini</span><h3 class="stat-number">Rp {{ '{:,.0f}'.format(total_revenue_this_month) }}</h3></div><div class="stat-icon"><i class="fa fa-calendar-alt"></i></div></div></div></div>
+        <div class="col-xl-4 col-md-6"><div class="card stat-card text-white bg-dark"><div class="card-body"><div class="stat-text"><span class="small-text">Total Semua Penghasilan</span><h3 class="stat-number">Rp {{ '{:,.0f}'.format(total_revenue_all_time) }}</h3></div><div class="stat-icon"><i class="fa fa-landmark"></i></div></div></div></div>
     </div>
-    <hr>
-
-    {# Baris untuk Statistik Pesanan #}
-    <h3 class="mt-4 mb-3">Statistik Pesanan</h3>
+    
+    <hr class="my-4">
+    <h4 class="sub-heading">Ringkasan Pesanan</h4>
     <div class="row">
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card bg-primary text-white h-100">
-                <div class="card-body">Total Pesanan <div class="fs-4 fw-bold">{{ total_orders }}</div></div>
-                <div class="card-footer d-flex align-items-center justify-content-between">
-                    <a class="small text-white stretched-link" href="{{ url_for('admin.order_management') }}">Lihat Detail</a>
-                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card bg-warning text-dark h-100">
-                <div class="card-body">Menunggu Pembayaran <div class="fs-4 fw-bold">{{ orders_pending_payment }}</div></div>
-                <div class="card-footer d-flex align-items-center justify-content-between">
-                    <a class="small text-dark stretched-link" href="{{ url_for('admin.order_management', status_filter='pending_payment') }}">Lihat Detail</a>
-                    <div class="small text-dark"><i class="fas fa-angle-right"></i></div>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card bg-info text-white h-100">
-                <div class="card-body">Perlu Diproses/Dikirim <div class="fs-4 fw-bold">{{ orders_awaiting_shipment }}</div></div>
-                <div class="card-footer d-flex align-items-center justify-content-between">
-                    <a class="small text-white stretched-link" href="{{ url_for('admin.order_management', status_filter='processing') }}">Lihat Detail</a>
-                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card bg-secondary text-white h-100">
-                <div class="card-body">Pesanan Dikirim <div class="fs-4 fw-bold">{{ orders_shipped }}</div></div>
-                <div class="card-footer d-flex align-items-center justify-content-between">
-                    <a class="small text-white stretched-link" href="{{ url_for('admin.order_management', status_filter='shipped') }}">Lihat Detail</a>
-                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card bg-success text-white h-100">
-                <div class="card-body">Pesanan Selesai <div class="fs-4 fw-bold">{{ orders_completed }}</div></div>
-                <div class="card-footer d-flex align-items-center justify-content-between">
-                    <a class="small text-white stretched-link" href="{{ url_for('admin.order_management', status_filter='completed') }}">Lihat Detail</a>
-                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card bg-danger text-white h-100">
-                <div class="card-body">Pesanan Dibatalkan <div class="fs-4 fw-bold">{{ orders_cancelled }}</div></div>
-                <div class="card-footer d-flex align-items-center justify-content-between">
-                    <a class="small text-white stretched-link" href="{{ url_for('admin.order_management', status_filter='cancelled') }}">Lihat Detail</a>
-                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
-                </div>
-            </div>
-        </div>
-        {# Kartu yang dihilangkan: Menunggu Refund, Stok Menipis, Stok Habis, Total Pengguna #}
-        {# Jika Anda ingin menambahkan Total Pengguna kembali: #}
-        <div class="col-xl-3 col-md-6 mb-4"> {# Atau kelas grid lain yang Anda gunakan #}
-            <div class="card bg-warning text-white h-100"> {# Sesuaikan warna jika perlu #}
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="text-white-75 small">Total Pengguna</div>
-                            <div class="fs-4 fw-bold">{{ total_users }}</div> {# PASTIKAN INI ADA #}
-                        </div>
-                        <i class="fas fa-users fa-2x text-white-50"></i> {# Contoh ikon #}
-                    </div>
-                </div>
-                <div class="card-footer d-flex align-items-center justify-content-between">
-                    <a class="small text-white stretched-link" href="{{ url_for('admin.user_management') }}">Lihat Pengguna</a>
-                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
-                </div>
-            </div>
-        </div>
-
+        <div class="col-xl-3 col-md-6"><div class="card stat-card text-white bg-c-purple"><div class="card-body"><div class="stat-text"><span class="small-text">Total Pesanan</span><h3 class="stat-number">{{ total_orders }}</h3></div><div class="stat-icon"><i class="fa fa-shopping-cart"></i></div></div><div class="card-footer"><a class="text-white" href="{{ url_for('admin.order_management') }}">Lihat Detail <i class="fa fa-arrow-circle-right float-end"></i></a></div></div></div>
+        <div class="col-xl-3 col-md-6"><div class="card stat-card bg-c-yellow"><div class="card-body"><div class="stat-text"><span class="small-text">Menunggu Pembayaran</span><h3 class="stat-number">{{ orders_pending_payment }}</h3></div><div class="stat-icon"><i class="fa fa-hourglass-start"></i></div></div><div class="card-footer"><a href="{{ url_for('admin.order_management', status_filter='pending_payment') }}">Lihat Detail <i class="fa fa-arrow-circle-right float-end"></i></a></div></div></div>
+        <div class="col-xl-3 col-md-6"><div class="card stat-card text-white bg-c-info"><div class="card-body"><div class="stat-text"><span class="small-text">Perlu Diproses</span><h3 class="stat-number">{{ orders_awaiting_shipment }}</h3></div><div class="stat-icon"><i class="fa fa-box-open"></i></div></div><div class="card-footer"><a class="text-white" href="{{ url_for('admin.order_management', status_filter='processing') }}">Lihat Detail <i class="fa fa-arrow-circle-right float-end"></i></a></div></div></div>
+        <div class="col-xl-3 col-md-6"><div class="card stat-card text-white bg-primary"><div class="card-body"><div class="stat-text"><span class="small-text">Pesanan Dikirim</span><h3 class="stat-number">{{ orders_shipped }}</h3></div><div class="stat-icon"><i class="fa fa-truck"></i></div></div><div class="card-footer"><a class="text-white" href="{{ url_for('admin.order_management', status_filter='shipped') }}">Lihat Detail <i class="fa fa-arrow-circle-right float-end"></i></a></div></div></div>
+        <div class="col-xl-3 col-md-6"><div class="card stat-card text-white bg-success"><div class="card-body"><div class="stat-text"><span class="small-text">Pesanan Selesai</span><h3 class="stat-number">{{ orders_completed }}</h3></div><div class="stat-icon"><i class="fa fa-check-circle"></i></div></div><div class="card-footer"><a class="text-white" href="{{ url_for('admin.order_management', status_filter='completed') }}">Lihat Detail <i class="fa fa-arrow-circle-right float-end"></i></a></div></div></div>
+        <div class="col-xl-3 col-md-6"><div class="card stat-card text-white bg-danger"><div class="card-body"><div class="stat-text"><span class="small-text">Pesanan Dibatalkan</span><h3 class="stat-number">{{ orders_cancelled }}</h3></div><div class="stat-icon"><i class="fa fa-times-circle"></i></div></div><div class="card-footer"><a class="text-white" href="{{ url_for('admin.order_management', status_filter='cancelled') }}">Lihat Detail <i class="fa fa-arrow-circle-right float-end"></i></a></div></div></div>
+        <div class="col-xl-3 col-md-6"><div class="card stat-card text-white bg-c-pink"><div class="card-body"><div class="stat-text"><span class="small-text">Menunggu Refund</span><h3 class="stat-number">{{ orders_awaiting_refund }}</h3></div><div class="stat-icon"><i class="fa fa-undo"></i></div></div><div class="card-footer"><a class="text-white" href="{{ url_for('admin.order_management', status_filter='refund_requested') }}">Lihat Detail <i class="fa fa-arrow-circle-right float-end"></i></a></div></div></div>
     </div>
-    <hr>
+    <hr class="my-4">
 
-    {# Baris untuk Statistik Produk #}
-    <h3 class="mt-4 mb-3">Statistik Produk</h3>
-     <div class="row">
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card bg-dark text-white h-100">
-                <div class="card-body">Total Produk Aktif <div class="fs-4 fw-bold">{{ total_active_products }}</div></div>
-                <div class="card-footer d-flex align-items-center justify-content-between">
-                    <a class="small text-white stretched-link" href="{{ url_for('admin.product_management') }}">Lihat Produk</a>
-                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
-                </div>
-            </div>
-        </div>
-        {# Kartu Produk Stok Menipis/Habis dihilangkan sesuai permintaan #}
+    <h4 class="sub-heading">Statistik Toko Lainnya</h4>
+    <div class="row">
+        <div class="col-xl-3 col-md-6"><div class="card stat-card text-white" style="background: linear-gradient(45deg,#663399,#9370DB);"><div class="card-body"><div class="stat-text"><span class="small-text">Total Produk Aktif</span><h3 class="stat-number">{{ total_active_products }}</h3></div><div class="stat-icon"><i class="fa fa-tags"></i></div></div><div class="card-footer"><a class="text-white" href="{{ url_for('admin.product_management') }}">Lihat Produk <i class="fa fa-arrow-circle-right float-end"></i></a></div></div></div>
+        <div class="col-xl-3 col-md-6"><div class="card stat-card text-white" style="background: linear-gradient(45deg,#4682B4,#5F9EA0);"><div class="card-body"><div class="stat-text"><span class="small-text">Total Pengguna</span><h3 class="stat-number">{{ total_users }}</h3></div><div class="stat-icon"><i class="fa fa-users"></i></div></div><div class="card-footer"><a class="text-white" href="{{ url_for('admin.user_management') }}">Lihat Pengguna <i class="fa fa-arrow-circle-right float-end"></i></a></div></div></div>
+        <div class="col-xl-3 col-md-6"><div class="card stat-card text-white bg-c-orange"><div class="card-body"><div class="stat-text"><span class="small-text">Produk Stok Menipis</span><h3 class="stat-number">{{ products_low_stock }}</h3></div><div class="stat-icon"><i class="fa fa-exclamation-triangle"></i></div></div><div class="card-footer"><a class="text-white" href="{{ url_for('admin.product_management', stock_filter='low') }}">Lihat Detail <i class="fa fa-arrow-circle-right float-end"></i></a></div></div></div>
+        <div class="col-xl-3 col-md-6"><div class="card stat-card text-white bg-c-red"><div class="card-body"><div class="stat-text"><span class="small-text">Produk Habis Stok</span><h3 class="stat-number">{{ products_out_of_stock }}</h3></div><div class="stat-icon"><i class="fa fa-ban"></i></div></div><div class="card-footer"><a class="text-white" href="{{ url_for('admin.product_management', stock_filter='out') }}">Lihat Detail <i class="fa fa-arrow-circle-right float-end"></i></a></div></div></div>
     </div>
 </div>
 {% endblock %}

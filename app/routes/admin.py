@@ -53,48 +53,58 @@ def save_image_file(image_file):
 @admin_required
 def dashboard():
     # Product Statistics
-    total_active_products = Product.query.filter_by(deleted_at=None).count()
+    total_active_products = Product.query.filter(Product.deleted_at.is_(None)).count()
+    low_stock_threshold = current_app.config.get('LOW_STOCK_THRESHOLD', 5)
+    products_low_stock = Product.query.filter(
+        Product.deleted_at.is_(None), 
+        Product.stock > 0,  # Pastikan produk masih ada stok, tapi di bawah threshold
+        Product.stock <= low_stock_threshold
+    ).count()
+    products_out_of_stock = Product.query.filter(Product.deleted_at.is_(None), Product.stock == 0).count()
 
     # User Statistics
     total_users = User.query.count() 
+
     # Order Statistics
     total_orders = Order.query.count()
     
     orders_pending_payment = Order.query.filter(
-        Order.status.in_(['pending', 'pending_payment']),
+        Order.status.in_(['pending', 'pending_payment']), # Mencakup kedua status jika alur Anda begitu
         Order.payment_status == 'unpaid'
     ).count()
     
-    orders_awaiting_shipment = Order.query.filter(
-        Order.status == 'processing' 
-    ).count()
-    
+    orders_awaiting_shipment = Order.query.filter(Order.status == 'processing').count()
     orders_shipped = Order.query.filter_by(status='shipped').count()
     orders_completed = Order.query.filter_by(status='completed').count()
     orders_cancelled = Order.query.filter_by(status='cancelled').count()
     
+    orders_awaiting_refund = Order.query.filter(
+        Order.status == 'cancelled', 
+        Order.payment_status == 'refund_requested'
+    ).count()
+
     # Revenue Statistics
     today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-    
     current_month_start = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    
     next_month_num = current_month_start.month % 12 + 1
     year_offset = 1 if current_month_start.month == 12 else 0
-    next_month_start = current_month_start.replace(year=current_month_start.year + year_offset, month=next_month_num, day=1)
-    current_month_end = next_month_start - timedelta(seconds=1) # timedelta digunakan di sini
+    next_month_start_date = current_month_start.replace(year=current_month_start.year + year_offset, month=next_month_num, day=1)
+    current_month_end = next_month_start_date - timedelta(seconds=1)
 
-    paid_at_is_not_null = Order.paid_at.isnot(None)
+    paid_at_is_not_null = Order.paid_at.isnot(None) # Kondisi untuk memastikan paid_at tidak null
 
     total_revenue_today = db.session.query(func.sum(Order.total)).filter(
         Order.status == 'completed', 
         paid_at_is_not_null,
-        Order.paid_at >= today_start,
-        Order.paid_at < (today_start + timedelta(days=1)) # timedelta digunakan di sini
+        Order.paid_at >= today_start, 
+        Order.paid_at < (today_start + timedelta(days=1)) 
     ).scalar() or 0
 
     total_revenue_this_month = db.session.query(func.sum(Order.total)).filter(
         Order.status == 'completed', 
-        paid_at_is_not_null, 
-        Order.paid_at >= current_month_start,
+        paid_at_is_not_null,
+        Order.paid_at >= current_month_start, 
         Order.paid_at <= current_month_end
     ).scalar() or 0
 
@@ -103,32 +113,50 @@ def dashboard():
         paid_at_is_not_null
     ).scalar() or 0
     
+    # Recent activities untuk notifikasi sederhana
+    limit_recent = 3 # Batasi jumlah notifikasi
     recent_pending_payment_orders = Order.query.filter(
         Order.status.in_(['pending', 'pending_payment']),
         Order.payment_status == 'unpaid'
-    ).order_by(Order.created_at.desc()).limit(3).all()
+    ).order_by(Order.created_at.desc()).limit(limit_recent).all()
 
     recent_processing_orders = Order.query.filter(
         Order.status == 'processing'
-    ).order_by(Order.paid_at.desc() if hasattr(Order, 'paid_at') else Order.created_at.desc()).limit(3).all()
+    ).order_by(Order.paid_at.desc() if hasattr(Order, 'paid_at') and Order.paid_at is not None else Order.created_at.desc()).limit(limit_recent).all()
+
+    recent_cancelled_for_refund = Order.query.filter(
+        Order.status == 'cancelled',
+        Order.payment_status == 'refund_requested'
+    ).order_by(Order.cancelled_at.desc() if hasattr(Order, 'cancelled_at') and Order.cancelled_at is not None else Order.created_at.desc()).limit(limit_recent).all()
+    
+    current_app.logger.debug(f"Admin Dashboard Stats - Low Stock: {products_low_stock}, Out of Stock: {products_out_of_stock}, Awaiting Refund: {orders_awaiting_refund}, Total Users: {total_users}")
+
 
     return render_template('admin/dashboard.html',
-                           title='Admin Dashboard',
+                           title='Dasbor Admin',
+                           # Product stats
                            total_active_products=total_active_products,
+                           products_low_stock=products_low_stock,
+                           products_out_of_stock=products_out_of_stock,
+                           # User stats
                            total_users=total_users,
+                           # Order stats
                            total_orders=total_orders,
                            orders_pending_payment=orders_pending_payment,
                            orders_awaiting_shipment=orders_awaiting_shipment,
                            orders_shipped=orders_shipped,
                            orders_completed=orders_completed,
                            orders_cancelled=orders_cancelled,
+                           orders_awaiting_refund=orders_awaiting_refund,
+                           # Revenue stats
                            total_revenue_today=total_revenue_today,
                            total_revenue_this_month=total_revenue_this_month,
                            total_revenue_all_time=total_revenue_all_time,
+                           # Recent activities
                            recent_pending_payment_orders=recent_pending_payment_orders,
-                           recent_processing_orders=recent_processing_orders
+                           recent_processing_orders=recent_processing_orders,
+                           recent_cancelled_for_refund=recent_cancelled_for_refund
                            )
-
 
 @admin_bp.route('/products')
 @login_required
@@ -349,39 +377,38 @@ def delete_product(product_id):
 @admin_required
 def order_management():
     page = request.args.get('page', 1, type=int)
-    per_page = 10 # Atau ambil dari config
-    
-    # Ambil filter status dari query parameter
-    status_filter = request.args.get('status_filter', 'all') # Default 'all'
+    per_page = 10 
+    status_filter = request.args.get('status_filter', 'all')
 
-    query = Order.query # Query dasar
+    query = Order.query
 
     if status_filter and status_filter != 'all':
-        if status_filter == 'pending_payment': # Kasus khusus jika status gabungan
+        if status_filter == 'pending_payment':
             query = query.filter(Order.status.in_(['pending', 'pending_payment']), Order.payment_status == 'unpaid')
-        elif status_filter == 'refund_requested': # Jika Anda punya status ini di payment_status
+        elif status_filter == 'refund_requested':
              query = query.filter(Order.status == 'cancelled', Order.payment_status == 'refund_requested')
+        elif status_filter == 'cancellation_requested': # Filter baru
+            query = query.filter(Order.status == 'cancellation_requested')
         else:
             query = query.filter(Order.status == status_filter)
     
     orders = query.order_by(Order.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
     
-    # Daftar status untuk dropdown filter
-    # Anda bisa mendefinisikan ini secara manual atau mengambil dari enum jika ada
     order_statuses = [
         {'value': 'all', 'name': 'Semua Status'},
-        {'value': 'pending', 'name': 'Pending (Belum ke Pembayaran)'},
-        {'value': 'pending_payment', 'name': 'Menunggu Pembayaran'}, # Gabungan dari status 'pending'/'pending_payment' & payment_status 'unpaid'
-        {'value': 'processing', 'name': 'Perlu Diproses/Dikirim'},
+        {'value': 'pending', 'name': 'Pending (Pra Bayar)'},
+        {'value': 'pending_payment', 'name': 'Menunggu Pembayaran'},
+        {'value': 'cancellation_requested', 'name': 'Permintaan Pembatalan'}, # Opsi filter baru
+        {'value': 'processing', 'name': 'Perlu Diproses'},
         {'value': 'shipped', 'name': 'Dikirim'},
         {'value': 'completed', 'name': 'Selesai'},
         {'value': 'cancelled', 'name': 'Dibatalkan'},
         {'value': 'failed', 'name': 'Gagal'},
-        {'value': 'refund_requested', 'name': 'Menunggu Refund'} # Jika Anda menggunakan status ini
+        {'value': 'refund_requested', 'name': 'Menunggu Refund'}
     ]
     
     return render_template('admin/order_management.html', 
-                           title='Manage Orders', 
+                           title='Manajemen Pesanan', 
                            orders=orders,
                            order_statuses=order_statuses,
                            current_status_filter=status_filter)
@@ -448,27 +475,25 @@ def admin_order_detail(order_id):
                            subtotal=subtotal)
     
 # --- BARU: Route untuk menandai refund sudah diproses ---
-@admin_bp.route('/orders/<string:order_id>/mark_refund_processed', methods=['POST'])
+@admin_bp.route('/orders/<string:order_id>/mark_refund_processed', methods=['POST']) # Pastikan ini POST
 @login_required
 @admin_required
 def mark_refund_processed(order_id):
     order = Order.query.get_or_404(order_id)
-
     if order.status == 'cancelled' and order.payment_status == 'refund_requested':
         try:
-            order.payment_status = 'refunded' # Atau 'refund_completed'
-            # Anda mungkin ingin mengubah order.status juga, misalnya kembali ke 'cancelled' jika sebelumnya 'pending_refund'
-            # atau biarkan 'cancelled'
+            order.payment_status = 'refunded' 
+            # Anda mungkin ingin menambahkan field order.refunded_at = datetime.utcnow()
             db.session.commit()
-            flash(f'Refund untuk pesanan {order.invoice_number} telah ditandai sebagai diproses/selesai.', 'success')
+            flash(f'Refund untuk pesanan #{order.invoice_number} telah ditandai selesai.', 'success')
         except Exception as e:
             db.session.rollback()
-            current_app.logger.error(f"Error marking refund as processed for order {order.id}: {str(e)}", exc_info=True)
-            flash('Gagal menandai refund sebagai diproses. Coba lagi.', 'danger')
+            flash(f'Gagal menandai refund selesai: {str(e)}', 'danger')
+            current_app.logger.error(f"Error marking refund as processed for order {order.id}: {e}")
     else:
-        flash('Status pesanan tidak memungkinkan untuk menandai refund sebagai diproses.', 'warning')
-    
+        flash('Status pesanan tidak valid untuk menandai refund selesai.', 'warning')
     return redirect(url_for('admin.admin_order_detail', order_id=order.id))
+
 
 # --- Rute Manajemen User (tetap sama) ---
 
@@ -661,3 +686,119 @@ def delete_category(category_id):
         flash(f'Error soft-deleting category: {e}', 'danger')
     
     return redirect(url_for('admin.category_management'))
+
+@admin_bp.route('/orders/update_status/<string:order_id>', methods=['POST'])
+@login_required
+@admin_required
+def update_order_status(order_id):
+    order = Order.query.get_or_404(order_id)
+    new_status = request.form.get('new_status')
+
+    # Validasi new_status jika perlu (misalnya, pastikan statusnya ada dalam daftar status yang valid)
+    valid_statuses = ['pending', 'pending_payment', 'processing', 'shipped', 'completed', 'cancelled', 'failed'] # Sesuaikan dengan status Anda
+    if new_status not in valid_statuses:
+        flash(f"Status '{new_status}' tidak valid.", 'danger')
+        return redirect(url_for('admin.admin_order_detail', order_id=order.id))
+
+    # Logika tambahan berdasarkan perubahan status
+    # Misalnya, jika status diubah menjadi 'shipped' dan belum ada nomor resi,
+    # Anda mungkin ingin mencegahnya atau memberi peringatan.
+    # Atau jika status 'completed', pastikan sudah 'shipped' dulu, dll.
+
+    # Contoh sederhana:
+    if order.status != new_status:
+        order.status = new_status
+        # Jika status 'shipped', catat tanggal pengiriman
+        if new_status == 'shipped' and not order.shipped_at:
+            order.shipped_at = datetime.utcnow()
+            # Anda mungkin juga ingin mengirim notifikasi ke pelanggan di sini
+        
+        # Jika status 'completed', catat tanggal diterima
+        elif new_status == 'completed' and not order.delivered_at:
+            # Biasanya ini dikonfirmasi oleh pelanggan, tapi admin bisa override
+            order.delivered_at = datetime.utcnow() 
+        
+        # Jika status 'cancelled'
+        elif new_status == 'cancelled':
+            if not order.cancelled_at:
+                order.cancelled_at = datetime.utcnow()
+            # Logika tambahan untuk pembatalan, misal kembalikan stok, cek payment_status
+            if order.payment_status == 'paid': # Jika sudah dibayar dan dibatalkan admin
+                order.payment_status = 'refund_requested' # atau logika refund Anda
+                flash('Pesanan dibatalkan. Proses refund mungkin diperlukan jika sudah dibayar.', 'info')
+            # Logika untuk mengembalikan stok jika pesanan dibatalkan
+            # for item in order.order_details:
+            #     product = Product.query.get(item.product_id)
+            #     if product:
+            #         product.stock += item.quantity
+        
+        db.session.commit()
+        flash(f"Status pesanan #{order.invoice_number} berhasil diubah menjadi '{new_status.replace('_',' ').title()}'.", 'success')
+    else:
+        flash(f"Pesanan #{order.invoice_number} sudah dalam status '{new_status.replace('_',' ').title()}'. Tidak ada perubahan.", 'info')
+
+    return redirect(url_for('admin.admin_order_detail', order_id=order.id))
+
+@admin_bp.route('/orders/<string:order_id>/approve_cancellation', methods=['POST'])
+@login_required
+@admin_required
+def approve_cancellation(order_id):
+    order = Order.query.get_or_404(order_id)
+    if order.status == 'cancellation_requested':
+        try:
+            previous_status = order.status # Simpan status sebelum diubah
+            order.status = 'cancelled'
+            order.cancelled_at = datetime.utcnow()
+            # Jika sudah dibayar, ubah status pembayaran untuk proses refund
+            if order.payment_status == 'paid':
+                order.payment_status = 'refund_requested' 
+                # Di sini Anda juga bisa memicu pengembalian stok produk
+                # for item in order.order_details:
+                #     product = Product.query.get(item.product_id)
+                #     if product:
+                #         product.stock += item.quantity
+                #         current_app.logger.info(f"Stock for product {product.id} restored by {item.quantity}")
+            
+            db.session.commit()
+            flash(f'Permintaan pembatalan untuk pesanan #{order.invoice_number} telah DISETUJUI.', 'success')
+            # Kirim notifikasi ke pelanggan bahwa pembatalan disetujui
+            # ... (logika notifikasi Anda) ...
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Gagal menyetujui pembatalan: {str(e)}', 'danger')
+            current_app.logger.error(f"Error approving cancellation for order {order.id}: {e}")
+    else:
+        flash('Pesanan ini tidak dalam status menunggu persetujuan pembatalan.', 'warning')
+    return redirect(url_for('admin.admin_order_detail', order_id=order.id))
+
+@admin_bp.route('/orders/<string:order_id>/reject_cancellation', methods=['POST'])
+@login_required
+@admin_required
+def reject_cancellation(order_id):
+    order = Order.query.get_or_404(order_id)
+    if order.status == 'cancellation_requested':
+        try:
+            # Kembalikan ke status sebelum 'cancellation_requested'
+            # Ini memerlukan Anda untuk tahu apa status sebelumnya.
+            # Untuk kesederhanaan, kita bisa kembalikan ke 'processing' jika sudah 'paid', atau 'pending_payment' jika 'unpaid'.
+            # Atau, Anda bisa menyimpan 'previous_status' saat request cancel dibuat.
+            if order.payment_status == 'paid':
+                order.status = 'processing' 
+            else: # unpaid
+                order.status = 'pending_payment' 
+            
+            # Hapus alasan pembatalan dan tanggal permintaan
+            order.cancellation_reason = None
+            order.cancellation_requested_at = None
+            
+            db.session.commit()
+            flash(f'Permintaan pembatalan untuk pesanan #{order.invoice_number} telah DITOLAK. Status dikembalikan.', 'info')
+            # Kirim notifikasi ke pelanggan bahwa pembatalan ditolak
+            # ... (logika notifikasi Anda) ...
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Gagal menolak pembatalan: {str(e)}', 'danger')
+            current_app.logger.error(f"Error rejecting cancellation for order {order.id}: {e}")
+    else:
+        flash('Pesanan ini tidak dalam status menunggu persetujuan pembatalan.', 'warning')
+    return redirect(url_for('admin.admin_order_detail', order_id=order.id))

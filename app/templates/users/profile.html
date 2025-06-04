@@ -1,11 +1,97 @@
-{% extends "base.html" %}
+{% extends 'base.html' %} {# Pastikan ini adalah base.html yang sudah terintegrasi dengan Famms #}
+
+{% block title %}Profil Saya - PetShopin{% endblock %}
+
+{% block page_title %}Profil Akun Saya{% endblock %} {# Judul untuk inner_page_head di base.html #}
+
+{% block head_extra %}
+<style>
+    .profile-page .card {
+        margin-bottom: 1.5rem;
+        border: 1px solid #e9ecef;
+        box-shadow: 0 .1rem .3rem rgba(0,0,0,.075)!important;
+    }
+    .profile-page .card-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+        font-weight: 500;
+        font-size: 1.1rem;
+        color: var(--navbar-text-color);
+    }
+    .profile-page .profile-details dt {
+        font-weight: 500;
+        color: #495057;
+        font-size: 0.9rem;
+        padding-bottom: 0.5rem;
+    }
+    .profile-page .profile-details dd {
+        color: #212529;
+        font-size: 0.95rem;
+        padding-bottom: 0.5rem;
+        margin-left: 0; /* Reset margin default dd jika menggunakan col */
+    }
+    .profile-page .btn-edit-profile {
+        background-color: var(--petshop-green-primary);
+        border-color: var(--petshop-green-primary);
+        color: white;
+        font-weight: 500;
+    }
+    .profile-page .btn-edit-profile:hover {
+        background-color: var(--petshop-green-darker);
+        border-color: var(--petshop-green-darker);
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-    <div class="container mt-5">
-        <h1>User Profile</h1>
-        <p>Welcome, {{ current_user.name }}!</p>
-        <p>Email: {{ current_user.email }}</p>
-        <p>Role: {{ current_user.role }}</p>
-        <a href="{{ url_for('users.edit_profile') }}" class="btn btn-primary">Edit Profile</a>
+<div class="container profile-page py-4">
+    {# Judul halaman sudah diurus oleh inner_page_head dari base.html #}
+    {# <h1 class="mb-4 text-center">Profil Saya</h1> #}
+
+    {% include '_messages.html' %} {# Untuk menampilkan flash messages jika ada #}
+
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-7">
+            <div class="card shadow-sm border-0">
+                <div class="card-header text-center">
+                   <i class="fa fa-user-circle-o me-2" style="color: var(--petshop-green-primary); font-size: 1.2em;"></i> Profil Pengguna
+                </div>
+                <div class="card-body p-4">
+                    <div class="text-center mb-4">
+                        {# Anda bisa menambahkan foto profil di sini jika ada #}
+                        {# <img src="{{ current_user.profile_image_url or url_for('static', filename='images/default_avatar.png') }}" alt="Foto Profil" class="img-thumbnail rounded-circle mb-2" style="width: 100px; height: 100px; object-fit: cover;"> #}
+                        <h4>Halo, {{ current_user.name }}!</h4>
+                    </div>
+                    
+                    <dl class="row profile-details">
+                        <dt class="col-sm-4 text-sm-end">Nama Lengkap:</dt>
+                        <dd class="col-sm-8">{{ current_user.name }}</dd>
+
+                        <dt class="col-sm-4 text-sm-end">Email:</dt>
+                        <dd class="col-sm-8">{{ current_user.email }}</dd>
+
+                        <dt class="col-sm-4 text-sm-end">Nomor Telepon:</dt>
+                        <dd class="col-sm-8">{{ current_user.phone_number or '-' }}</dd>
+
+                        <dt class="col-sm-4 text-sm-end">Role:</dt>
+                        <dd class="col-sm-8">
+                            <span class="badge {% if current_user.role == 'admin' %}bg-primary{% else %}bg-secondary{% endif %}" style="font-size: 0.85rem;">
+                                {{ current_user.role|capitalize }}
+                            </span>
+                        </dd>
+                    </dl>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="text-center">
+                        <a href="{{ url_for('users.edit_profile') }}" class="btn btn-edit-profile">
+                            <i class="fa fa-pencil"></i> Edit Profil
+                        </a>
+                        {# Anda bisa menambahkan tombol lain seperti "Ubah Password" di sini #}
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+</div>
 {% endblock %}

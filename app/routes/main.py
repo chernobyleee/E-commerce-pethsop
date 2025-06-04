@@ -23,19 +23,24 @@ def get_shipping_service_instance():
 @main_bp.route('/')
 def home():
     page = request.args.get('page', 1, type=int)
-    per_page = 12
-    
-    # Get featured products (you can customize the query based on your needs)
-    products = Product.query.filter_by(deleted_at=None).order_by(Product.created_at.desc()).paginate(page=page, per_page=per_page)
-    
-    # Get all categories for the navbar
-    categories = Category.query.filter_by(deleted_at=None).all()
-    
-    return render_template('main/home.html', 
-                          title='Home', 
-                          products=products,
-                          categories=categories)
+    # Untuk produk unggulan di homepage, biasanya kita tidak pakai pagination, tapi beberapa item saja.
+    # Jika Anda tetap ingin pakai pagination di home, maka template harus pakai products.items
+    # Jika ingin beberapa produk saja, gunakan .limit()
 
+    # Opsi 1: Beberapa produk unggulan (misalnya 6 terbaru) - TIDAK PAGINATED
+    # featured_products = Product.query.filter(Product.deleted_at.is_(None)).order_by(Product.created_at.desc()).limit(6).all()
+    # return render_template('main/home.html', title='Selamat Datang', products=featured_products)
+
+    # OPSI 2: Menggunakan pagination (sesuai kode route Anda sebelumnya)
+    per_page = 6 # Jumlah produk unggulan per halaman (jika mau ada pagination di home)
+    products_pagination = Product.query.filter_by(deleted_at=None).order_by(Product.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
+
+    # categories = Category.query.filter_by(deleted_at=None).all() # Jika masih diperlukan untuk navbar di base.html
+
+    return render_template('main/home.html', 
+                           title='Selamat Datang di PetShopin', 
+                           products=products_pagination) # Kirim objek pagination
+                           # categories=categories)
 @main_bp.route('/product/<string:slug>')
 def product_detail(slug):
     product = Product.query.filter_by(slug=slug, deleted_at=None).first_or_404()
@@ -192,3 +197,9 @@ def track_order_page():
                            awb_query=awb_query,         # Kirim nilai query terakhir
                            courier_query=courier_query,
                            supported_couriers=supported_couriers)
+    
+@main_bp.route('/about')
+def about_page():
+    return render_template('main/about.html', 
+                           title='Tentang Kami', 
+                           page_main_title='Tentang PetShopin')

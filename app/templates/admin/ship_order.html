@@ -1,54 +1,98 @@
-{% extends 'base.html' %}
+{% extends 'base.html' %} {# Pastikan ini adalah base.html yang sudah terintegrasi Famms #}
+
+{% block title %}Input Resi Pesanan #{{ order.invoice_number }} - PetShopin Admin{% endblock %}
+
+{% block page_title %}Input Resi untuk Pesanan #{{ order.invoice_number }}{% endblock %}
+
+{% block head_extra %}
+<style>
+    .admin-page-content .card {
+        margin-bottom: 1.5rem;
+        border: 1px solid #e9ecef;
+        box-shadow: 0 .1rem .3rem rgba(0,0,0,.075)!important;
+    }
+    .admin-page-content .card-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+        font-weight: 500;
+        font-size: 1.05rem;
+        color: var(--navbar-text-color);
+    }
+    .admin-page-content .info-label {
+        font-weight: 500;
+        color: #495057;
+        font-size: 0.9rem;
+    }
+    .admin-page-content .info-value {
+        color: #212529;
+        font-size: 0.9rem;
+    }
+    .admin-page-content .form-label {
+        font-weight: 500;
+        font-size: 0.9rem;
+    }
+    .admin-page-content .form-control {
+        font-size: 0.9rem;
+    }
+    .admin-page-content .btn-submit-resi {
+        background-color: var(--petshop-green-primary);
+        border-color: var(--petshop-green-primary);
+        color: white;
+        font-weight: 500;
+    }
+    .admin-page-content .btn-submit-resi:hover {
+        background-color: var(--petshop-green-darker);
+        border-color: var(--petshop-green-darker);
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <h1>Update Pengiriman Pesanan #{{ order.invoice_number }}</h1>
-    <hr>
+<div class="container admin-page-content py-4">
+    {# Judul dari block page_title di atas #}
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="alert alert-{{ category }}">{{ message }}</div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
+    {% include '_messages.html' %}
 
-    <div class="card mb-3">
-        <div class="card-header">
-            Detail Pesanan
-        </div>
-        <div class="card-body">
-            <p><strong>Order ID:</strong> {{ order.id }}</p>
-            <p><strong>Invoice:</strong> {{ order.invoice_number }}</p>
-            <p><strong>Status:</strong> {{ order.status.capitalize() }}</p>
-            <p><strong>Total:</strong> Rp {{ '{:,.0f}'.format(order.total) }}</p>
-            <p><strong>Dibuat Pada:</strong> {{ order.created_at.strftime('%d-%m-%Y %H:%M') }}</p>
-            <p><strong>Penerima:</strong> {{ shipment.name }} ({{ shipment.phone }})</p>
-            <p><strong>Alamat:</strong> {{ shipment.address }}, {{ shipment.subdistrict }}, {{ shipment.district }}, {{ shipment.city }}, {{ shipment.province }}, {{ shipment.zip_code }}</p>
-            <p><strong>Kurir:</strong> {{ shipment.courier }} - {{ shipment.service }}</p>
-            <p><strong>Biaya Ongkir:</strong> Rp {{ '{:,.0f}'.format(shipment.cost) }}</p>
-            {% if shipment.tracking_number %}
-                <p><strong>Nomor Resi Saat Ini:</strong> {{ shipment.tracking_number }}</p>
-            {% else %}
-                <p><strong>Nomor Resi:</strong> Belum ada</p>
-            {% endif %}
-        </div>
-    </div>
-
-    <div class="card">
-        <div class="card-header">
-            Input Nomor Resi
-        </div>
-        <div class="card-body">
-            <form method="POST" action="{{ url_for('admin.admin_ship_order', order_id=order.id) }}">
-                <div class="mb-3">
-                    <label for="tracking_number" class="form-label">Nomor Resi:</label>
-                    <input type="text" class="form-control" id="tracking_number" name="tracking_number" value="{{ shipment.tracking_number or '' }}" required>
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-xl-7">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header">
+                    <i class="fa fa-truck me-2" style="color: var(--petshop-green-primary);"></i>Input Nomor Resi Pengiriman
                 </div>
-                <button type="submit" class="btn btn-primary mt-3">Simpan Nomor Resi & Kirim Pesanan</button>
-                <a href="{{ url_for('admin.admin_order_detail', order_id=order.id) }}" class="btn btn-secondary mt-3">Batal</a>
-            </form>
+                <div class="card-body p-4">
+                    <h6 class="mb-3">Detail Pesanan</h6>
+                    <dl class="row dl-horizontal mb-3" style="font-size:0.9rem;">
+                        <dt class="col-sm-4 info-label">Invoice:</dt>
+                        <dd class="col-sm-8 info-value fw-bold">{{ order.invoice_number }}</dd>
+                        <dt class="col-sm-4 info-label">Status:</dt>
+                        <dd class="col-sm-8 info-value"><span class="badge bg-info text-dark">{{ order.status.capitalize() }}</span></dd>
+                        <dt class="col-sm-4 info-label">Penerima:</dt>
+                        <dd class="col-sm-8 info-value">{{ shipment.name }} ({{ shipment.phone }})</dd>
+                        <dt class="col-sm-4 info-label">Alamat:</dt>
+                        <dd class="col-sm-8 info-value">{{ shipment.address }}, {{ shipment.subdistrict }}, {{ shipment.city }}</dd>
+                        <dt class="col-sm-4 info-label">Kurir:</dt>
+                        <dd class="col-sm-8 info-value">{{ shipment.courier | upper }} - {{ shipment.service }}</dd>
+                    </dl>
+                    <hr>
+                    <form method="POST" action="{{ url_for('admin.admin_ship_order', order_id=order.id) }}">
+                        <div class="mb-3">
+                            <label for="tracking_number" class="form-label">Nomor Resi (AWB) <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control form-control-sm" id="tracking_number" name="tracking_number" value="{{ shipment.tracking_number or '' }}" placeholder="Masukkan nomor resi di sini" required>
+                        </div>
+                        <div class="d-flex justify-content-end mt-4">
+                            <a href="{{ url_for('admin.admin_order_detail', order_id=order.id) }}" class="btn btn-outline-secondary me-2">Batal</a>
+                            <button type="submit" class="btn btn-submit-resi">
+                                <i class="fa fa-save"></i> Simpan Resi & Tandai Dikirim
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts_page %}
+{{ super() if super }}
 {% endblock %}

@@ -1,37 +1,190 @@
-{% extends 'base.html' %}
+{% extends 'base.html' %} {# Pastikan ini adalah base.html yang sudah terintegrasi Famms #}
 
-{% block title %}Register{% endblock %}
+{% block title %}Daftar Akun Baru - PetShopin{% endblock %}
+
+{# Kita tidak menggunakan inner_page_head untuk halaman login/register agar bisa full-height #}
+{% block top_content_section %}{% endblock %} 
+{% block page_title %}{% endblock %}
+
+
+{% block head_extra %}
+{# Menggunakan style yang sama dengan halaman login untuk konsistensi #}
+<style>
+    .auth-page-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: calc(100vh - var(--body-padding-top, 75px) - 70px); /* 70px approx footer height */
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+        background-color: #f4f7f6; 
+    }
+    .auth-container {
+        display: flex;
+        max-width: 900px;
+        width: 100%;
+        background-color: #ffffff;
+        border-radius: 10px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        flex-direction: row-reverse; /* Tukar posisi panel untuk halaman register */
+    }
+    .auth-form-panel, .auth-overlay-panel {
+        padding: 40px 30px;
+    }
+    .auth-form-panel {
+        flex: 1.2; 
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    .auth-overlay-panel {
+        flex: 1;
+        background: linear-gradient(to right, var(--petshop-green-primary), var(--petshop-green-darker));
+        color: white;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+    }
+    .auth-overlay-panel h1 {
+        font-weight: bold;
+        margin-bottom: 15px;
+        font-size: 2.2rem;
+    }
+    .auth-overlay-panel p {
+        font-size: 1rem;
+        line-height: 1.6;
+        margin-bottom: 25px;
+    }
+    .auth-title {
+        font-weight: 700;
+        margin-bottom: 1rem;
+        color: #333;
+        font-size: 2rem;
+    }
+    .auth-form-panel .form-control {
+        background-color: #f0f0f0;
+        border: none;
+        padding: 12px 15px;
+        margin-bottom: 10px;
+        width: 100%;
+        border-radius: 5px;
+        font-size: 0.9rem;
+    }
+    .auth-form-panel .form-control:focus {
+        background-color: #e9e9e9;
+        outline: none;
+        box-shadow: none;
+    }
+    .auth-form-panel .btn-submit {
+        border-radius: 20px;
+        border: 1px solid var(--petshop-green-primary);
+        background-color: var(--petshop-green-primary);
+        color: #FFFFFF;
+        font-size: 0.9rem;
+        font-weight: bold;
+        padding: 12px 45px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        transition: transform 80ms ease-in;
+    }
+    .auth-form-panel .btn-submit:active {
+        transform: scale(0.95);
+    }
+    .auth-form-panel .btn-submit:focus {
+        outline: none;
+    }
+    .auth-form-panel .btn-outline { 
+        border-radius: 20px;
+        border: 1px solid #FFFFFF;
+        background-color: transparent;
+        color: #FFFFFF;
+        font-size: 0.9rem;
+        font-weight: bold;
+        padding: 12px 45px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+    }
+     .auth-form-panel .btn-outline:hover {
+        background-color: rgba(255,255,255,0.1);
+     }
+    .auth-form-panel .text-muted-link {
+        font-size: 0.85rem;
+        color: #6c757d;
+        text-decoration: none;
+    }
+    .auth-form-panel .text-muted-link:hover {
+        text-decoration: underline;
+    }
+    .auth-form-panel .switch-auth-link {
+        font-weight: bold;
+        color: var(--petshop-green-primary);
+        text-decoration: none;
+    }
+     .auth-form-panel .switch-auth-link:hover {
+        text-decoration: underline;
+     }
+
+    @media (max-width: 767.98px) {
+        .auth-container {
+            flex-direction: column; /* Tetap column untuk mobile */
+        }
+        .auth-form-panel, .auth-overlay-panel {
+            flex: none;
+            padding: 30px 20px;
+        }
+        .auth-overlay-panel {
+             min-height: 200px;
+             /* Pastikan panel ajakan muncul lebih dulu di mobile jika diinginkan, atau sesuaikan urutan di HTML */
+        }
+        .auth-title {
+            font-size: 1.8rem;
+        }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card mt-5">
-            <div class="card-header text-center">
-                <h3>Register</h3>
-            </div>
-            <div class="card-body">
-                <form method="POST" action="{{ url_for('users.register') }}">
-                    <div class="mb-3">
-                        <label for="name" class="form-label">Full Name</label>
-                        <input type="text" class="form-control" id="name" name="name" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="email" class="form-label">Email address</label>
-                        <input type="email" class="form-control" id="email" name="email" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="password" class="form-label">Password</label>
-                        <input type="password" class="form-control" id="password" name="password" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="confirm_password" class="form-label">Confirm Password</label>
-                        <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
-                    </div>
-                    <button type="submit" class="btn btn-success w-100">Register</button>
-                </form>
-                <p class="text-center mt-3">Already have an account? <a href="{{ url_for('users.login') }}">Login here</a></p>
-            </div>
+<div class="auth-page-wrapper">
+    <div class="auth-container">
+        {# Panel Kanan (Form) untuk Register - urutan ditukar dengan flex-direction: row-reverse; pada .auth-container #}
+        <div class="auth-form-panel">
+            <form method="POST" action="{{ url_for('users.register') }}">
+                <h1 class="auth-title text-center">Buat Akun Baru</h1>
+                {# <p class="text-center text-muted small mb-3">Daftar dan mulai berbelanja untuk anabul kesayangan!</p> #}
+                
+                <div class="mb-3">
+                    <input type="text" class="form-control" id="name" name="name" placeholder="Nama Lengkap Anda" required value="{{ request.form.name or '' }}">
+                </div>
+                <div class="mb-3">
+                    <input type="email" class="form-control" id="email" name="email" placeholder="Alamat Email" required value="{{ request.form.email or '' }}">
+                </div>
+                <div class="mb-3">
+                    <input type="password" class="form-control" id="password" name="password" placeholder="Password" required>
+                </div>
+                <div class="mb-3">
+                    <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder="Konfirmasi Password" required>
+                </div>
+                <div class=" mt-4">
+                    <button type="submit" class="btn btn-submit btn-lg btn-block">Daftar Sekarang</button>
+                </div>
+            </form>
+            <p class="text-center mt-4 mb-0 small">Sudah punya akun? 
+                <a href="{{ url_for('users.login') }}" class="switch-auth-link">Login di sini</a>
+            </p>
+        </div>
+        {# Panel Kiri (Overlay) untuk Register #}
+        <div class="auth-overlay-panel">
+            <h1>Selamat Datang!</h1>
+            <p>Senang bertemu Anda! Silakan isi data diri untuk bergabung dengan PetShopin dan berikan yang terbaik untuk hewan peliharaan Anda.</p>
+            <a href="{{ url_for('users.login') }}" class="btn btn-outline text-warning">Sudah Punya Akun? Login</a>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts_page %}
+{{ super() if super }}
 {% endblock %}

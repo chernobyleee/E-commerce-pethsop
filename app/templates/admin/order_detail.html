@@ -1,139 +1,358 @@
-{# app/templates/admin/order_detail.html #}
-{% extends 'base.html' %}
+{% extends 'base.html' %} {# Pastikan ini adalah base.html yang sudah terintegrasi Famms #}
 
-{% block title %}{{ title }}{% endblock %}
+{% block title %}{{ title }} - PetShopin Admin{% endblock %}
+
+{% block page_title %}Detail Pesanan Admin #{{ order.invoice_number }}{% endblock %} {# Judul untuk inner_page_head #}
+
+{% block head_extra %}
+<style>
+    .admin-order-detail-page .card {
+        margin-bottom: 1.5rem;
+        border: 1px solid #e9ecef;
+        box-shadow: 0 .1rem .3rem rgba(0,0,0,.075)!important; 
+    }
+    .admin-order-detail-page .card-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+        font-weight: 500;
+        font-size: 1.05rem; 
+        color: var(--navbar-text-color); 
+    }
+    .admin-order-detail-page .info-label {
+        font-weight: 500;
+        color: #495057; 
+        width: 170px; 
+        font-size: 0.9rem;
+        padding-bottom: 0.6rem; 
+    }
+    .admin-order-detail-page .info-value {
+        color: #212529; 
+        font-size: 0.9rem;
+        padding-bottom: 0.6rem;
+    }
+    .admin-order-detail-page .product-summary-table th,
+    .admin-order-detail-page .product-summary-table td {
+        font-size: 0.9rem;
+        padding: 0.6rem 0.75rem; 
+        vertical-align: middle;
+    }
+    .admin-order-detail-page .product-summary-table img {
+        width: 50px; 
+        height: 50px;
+        object-fit: contain;
+        border: 1px solid #f0f0f0;
+        border-radius: .2rem;
+        margin-right: 10px;
+    }
+    .admin-order-detail-page .tracking-history-list {
+        padding-left: 0; list-style-type: none; font-size: 0.875rem;
+    }
+    .admin-order-detail-page .tracking-history-list li {
+        padding: 0.75rem 0.5rem; border-bottom: 1px dashed #e9ecef;
+        position: relative; padding-left: 28px; 
+    }
+    .admin-order-detail-page .tracking-history-list li:last-child { border-bottom: none; }
+    .admin-order-detail-page .tracking-history-list li::before { 
+        content: '\f111'; font-family: FontAwesome; position: absolute;
+        left: 5px; top: 14px; font-size: 0.6rem; color: var(--petshop-green-primary);
+    }
+    .admin-order-detail-page .tracking-history-list strong { display: block; color: #343a40; font-weight: 500;}
+    .admin-order-detail-page .tracking-history-list small.location { color: #6c757d; display: block; margin-top: 2px; }
+    
+    .admin-order-detail-page .order-status-badge { font-size: 0.85rem; padding: .4em .7em; vertical-align: middle; }
+    .admin-order-detail-page .action-buttons .btn, .admin-order-detail-page .action-buttons form { margin-right: 0.5rem; margin-bottom: 0.75rem; }
+    .admin-order-detail-page .action-buttons .btn-sm { font-size: 0.85rem; padding: .3rem .75rem; }
+    
+    .admin-order-detail-page .total-summary-value { color: var(--petshop-green-primary); font-weight: bold; }
+    .admin-order-detail-page .btn-back-list { font-size: 0.9rem; padding: .4rem .8rem; }
+     @media (max-width: 575.98px) {
+        .admin-order-detail-page .dl-horizontal dt {
+            width: 100%; float: none; text-align: left; font-weight: bold; margin-right: 0; padding-bottom: 0.1rem;
+        }
+        .admin-order-detail-page .dl-horizontal dd {
+            margin-left: 0; padding-left: 10px; margin-bottom: 0.5rem;
+        }
+         .admin-order-detail-page .info-label, .admin-order-detail-page .info-value {
+             padding-bottom: 0.25rem; 
+        }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h1>Detail Pesanan <small class="text-muted">#{{ order.invoice_number }}</small></h1>
-    <hr>
+<div class="container-fluid admin-order-detail-page px-md-4 py-4">
+    {% include '_messages.html' %}
 
-    <div class="row">
-        <div class="col-md-6">
-            <div class="card mb-3">
+    <div class="row g-lg-4 g-md-3 g-3">
+        <div class="col-lg-7">
+            <div class="card shadow-sm border-0 mb-4">
                 <div class="card-header">
-                    Informasi Pesanan
+                    <i class="fa fa-file-text-o me-2" style="color: var(--petshop-green-primary);"></i>Informasi Pesanan
                 </div>
-                <div class="card-body">
-                    <p><strong>Order ID:</strong> {{ order.id }}</p>
-                    <p><strong>Invoice:</strong> {{ order.invoice_number }}</p>
-                    <p><strong>Status:</strong> 
-                        {% if order.status == 'pending' %}
-                            <span class="badge bg-warning text-dark">Pending</span>
-                        {% elif order.status == 'paid' %}
-                            <span class="badge bg-success">Paid</span>
-                        {% elif order.status == 'shipped' %}
-                            <span class="badge bg-info text-dark">Shipped</span>
-                        {% elif order.status == 'completed' %}
-                            <span class="badge bg-primary">Completed</span>
-                        {% elif order.status == 'cancelled' %}
-                            <span class="badge bg-danger">Cancelled</span>
-                        {% elif order.status == 'failed' %}
-                            <span class="badge bg-danger">Failed</span>
-                        {% else %}
-                            <span class="badge bg-secondary">{{ order.status.capitalize() }}</span>
+                <div class="card-body p-4">
+                    <dl class="row dl-horizontal mb-0">
+                        <dt class="col-sm-5 col-md-4 info-label">No. Invoice:</dt>
+                        <dd class="col-sm-7 col-md-8 info-value fw-bold">{{ order.invoice_number }}</dd>
+                        <dt class="col-sm-5 col-md-4 info-label">Nama Pelanggan:</dt>
+                        <dd class="col-sm-7 col-md-8 info-value">{{ order.customer.name if order.customer else 'N/A' }}</dd>
+                        <dt class="col-sm-5 col-md-4 info-label">Email Pelanggan:</dt>
+                        <dd class="col-sm-7 col-md-8 info-value">{{ order.customer.email if order.customer else 'N/A' }}</dd>
+                        <dt class="col-sm-5 col-md-4 info-label">Tanggal Pesan:</dt>
+                        <dd class="col-sm-7 col-md-8 info-value">{{ order.created_at.strftime('%d %B %Y, %H:%M') }}</dd>
+                        <dt class="col-sm-5 col-md-4 info-label">Status Pesanan:</dt>
+                        <dd class="col-sm-7 col-md-8 info-value">
+                            {% if order.status == 'cancellation_requested' %}
+                                <span class="badge order-status-badge" style="background-color: #fd7e14; color: white;">Permintaan Pembatalan</span>
+                            {% elif order.status == 'pending' or order.status == 'pending_payment' %}
+                                <span class="badge order-status-badge" style="background-color: #ffc107; color: #212529;">Menunggu Pembayaran</span>
+                            {% elif order.status == 'processing' %}
+                                <span class="badge order-status-badge" style="background-color: #0dcaf0; color: #212529;">Sedang Diproses</span>
+                            {% elif order.status == 'shipped' %}
+                                <span class="badge order-status-badge" style="background-color: #0d6efd; color: white;">Dikirim</span>
+                            {% elif order.status == 'completed' %}
+                                <span class="badge order-status-badge" style="background-color: var(--petshop-green-primary); color: white;">Selesai</span>
+                            {% elif order.status == 'cancelled' %}
+                                <span class="badge order-status-badge bg-danger text-white">Dibatalkan</span>
+                            {% elif order.status == 'failed' %}
+                                <span class="badge order-status-badge bg-danger text-white">Gagal</span>
+                            {% else %}
+                                <span class="badge order-status-badge bg-secondary text-white">{{ order.status.replace('_',' ')|capitalize }}</span>
+                            {% endif %}
+                        </dd>
+                        <dt class="col-sm-5 col-md-4 info-label">Status Pembayaran:</dt>
+                        <dd class="col-sm-7 col-md-8 info-value">
+                             <span class="badge order-status-badge 
+                                {% if order.payment_status == 'paid' %}bg-success text-white
+                                {% elif order.payment_status == 'unpaid' %}bg-warning text-dark
+                                {% elif order.payment_status == 'failed' %}bg-danger text-white
+                                {% elif order.payment_status == 'refund_requested' %}bg-info text-dark
+                                {% elif order.payment_status == 'refunded' %}bg-secondary text-white
+                                {% else %}bg-light text-dark border
+                                {% endif %}">
+                                {{ order.payment_status.replace('_', ' ')|capitalize }}
+                            </span>
+                        </dd>
+                        {% if order.paid_at %}<dt class="col-sm-5 col-md-4 info-label">Dibayar Pada:</dt><dd class="col-sm-7 col-md-8 info-value">{{ order.paid_at.strftime('%d %B %Y, %H:%M') }}</dd>{% endif %}
+                        {% if order.shipped_at %}<dt class="col-sm-5 col-md-4 info-label">Dikirim Pada:</dt><dd class="col-sm-7 col-md-8 info-value">{{ order.shipped_at.strftime('%d %B %Y, %H:%M') }}</dd>{% endif %}
+                        {% if order.delivered_at %}<dt class="col-sm-5 col-md-4 info-label">Diterima Pada:</dt><dd class="col-sm-7 col-md-8 info-value">{{ order.delivered_at.strftime('%d %B %Y, %H:%M') }}</dd>{% endif %}
+                         {% if order.cancelled_at %}
+                            <dt class="col-sm-5 col-md-4 info-label">Dibatalkan Pada:</dt>
+                            <dd class="col-sm-7 col-md-8 info-value">{{ order.cancelled_at.strftime('%d %B %Y, %H:%M') }}</dd>
+                                {% if order.cancellation_reason %}
+                                <dt class="col-sm-5 col-md-4 info-label">Alasan Pembatalan:</dt>
+                                <dd class="col-sm-7 col-md-8 info-value fst-italic">"{{ order.cancellation_reason }}"</dd>
+                                {% endif %}
+                                {% if order.payment_status == 'refund_requested' %}
+                                    <dt class="col-sm-5 col-md-4 info-label"></dt> <dd class="col-sm-7 col-md-8 info-value text-muted small mt-1 fst-italic">Admin perlu memproses refund.</dd>
+                                {% elif order.payment_status == 'refunded' %}
+                                    <dt class="col-sm-5 col-md-4 info-label"></dt> <dd class="col-sm-7 col-md-8 info-value text-success small mt-1 fst-italic">Pengembalian dana telah diproses.</dd>
+                                {% endif %}
+                        {% elif order.status == 'cancellation_requested' %}
+                            <dt class="col-sm-5 col-md-4 info-label mt-2 pt-2 border-top">Diminta Batal Pada:</dt>
+                            <dd class="col-sm-7 col-md-8 info-value mt-2 pt-2 border-top">{{ order.cancellation_requested_at.strftime('%d %B %Y, %H:%M') if order.cancellation_requested_at else '-'}}</dd>
+                            
+                            <dt class="col-sm-5 col-md-4 info-label">Alasan Pelanggan:</dt>
+                            <dd class="col-sm-7 col-md-8 info-value fst-italic">
+                                "{{ order.cancellation_reason if order.cancellation_reason else 'Tidak ada alasan diberikan.' }}"
+                            </dd>
                         {% endif %}
-                    </p>
-                    <p><strong>Total Pembayaran:</strong> Rp {{ '{:,.0f}'.format(order.total) }}</p>
-                    <p><strong>Dibuat Pada:</strong> {{ order.created_at.strftime('%d %B %Y, %H:%M') }}</p>
-                    <p><strong>Dibayar Pada:</strong> {{ order.paid_at.strftime('%d %B %Y, %H:%M') if order.paid_at else 'Belum Dibayar' }}</p>
+                    </dl>
+                    
+                    <div class="action-buttons mt-4 pt-3 border-top">
+                        <h6 class="mb-2 small text-muted">AKSI ADMIN:</h6>
+                        <form method="POST" action="{{ url_for('admin.update_order_status', order_id=order.id) }}" class="mb-2 d-inline-block">
+                            <div class="input-group input-group-sm">
+                                <select name="new_status" class="form-select form-select-sm mr-3" style="max-width: 180px;">
+                                    <option value="pending_payment" {% if order.status == 'pending_payment' %}selected{% endif %}>Menunggu Pembayaran</option>
+                                    <option value="processing" {% if order.status == 'processing' %}selected{% endif %}>Processing</option>
+                                    <option value="shipped" {% if order.status == 'shipped' %}selected{% endif %}>Shipped</option>
+                                    <option value="completed" {% if order.status == 'completed' %}selected{% endif %}>Completed</option>
+                                    <option value="cancelled" {% if order.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                                    <option value="failed" {% if order.status == 'failed' %}selected{% endif %}>Failed</option>
+                                    <option value="cancellation_requested" {% if order.status == 'cancellation_requested' %}selected disabled{% endif %}>Permintaan Pembatalan</option> {# Disabled jika sudah jadi status ini #}
+                                </select>
+                                <button type="submit" class="btn btn-sm btn-info">Update Status</button>
+                            </div>
+                        </form>
+                        
+                        {% if order.status == 'cancellation_requested' %}
+                            <form method="POST" action="{{ url_for('admin.approve_cancellation', order_id=order.id) }}" class="d-inline-block">
+                                <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Anda yakin ingin MENYETUJUI permintaan pembatalan ini?');"><i class="fa fa-check"></i> Setujui Pembatalan</button>
+                            </form>
+                            <form method="POST" action="{{ url_for('admin.reject_cancellation', order_id=order.id) }}" class="d-inline-block">
+                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Anda yakin ingin MENOLAK permintaan pembatalan ini?');"><i class="fa fa-times"></i> Tolak Pembatalan</button>
+                            </form>
+                        {% endif %}
+
+                        {% if order.status == 'processing' or (order.status == 'paid' and order.payment_status == 'paid' and (not order.shipment or not order.shipment.tracking_number)) %}
+                           <a href="{{ url_for('admin.admin_ship_order', order_id=order.id) }}" class="btn btn-sm" style="background-color: var(--petshop-green-primary); border-color: var(--petshop-green-primary); color:white;"><i class="fa fa-truck"></i> Input Resi & Kirim</a>
+                        {% endif %}
+
+                        {# --- PERBAIKAN DI SINI --- #}
+                        {% if order.status == 'cancelled' and order.payment_status == 'refund_requested' %}
+                            {% set customer_phone = order.shipment.phone if order.shipment else (order.customer.phone_number if order.customer else None) %}
+                            {% if customer_phone %}
+                                {# generate_whatsapp_refund_link harus didefinisikan dan dikirim ke template jika mau dipakai #}
+                                {# {% set refund_whatsapp_link = generate_whatsapp_refund_link(order, customer_phone) %}  #}
+                                {# {% if refund_whatsapp_link %} #}
+                                <div class="alert alert-info p-2 small mt-2">
+                                    <p class="mb-1">Pesanan ini memerlukan proses refund. Hubungi pelanggan di {{customer_phone}}.</p>
+                                    {# <a href="{{ refund_whatsapp_link }}" class="btn btn-sm btn-success" target="_blank">
+                                        <i class="fa fa-whatsapp"></i> Hubungi Pelanggan (WA)
+                                    </a> #}
+                                </div>
+                                {# {% endif %} #}
+                            {% endif %}
+                            {# Tombol "Tandai Refund Selesai" sekarang di dalam form POST #}
+                            <form action="{{ url_for('admin.mark_refund_processed', order_id=order.id) }}" method="POST" class="d-inline-block" onsubmit="return confirm('Tandai bahwa refund untuk pesanan ini sudah diproses dan selesai?')">
+                                <button type="submit" class="btn btn-sm btn-warning">
+                                    <i class="fa fa-undo"></i> Tandai Refund Selesai
+                                </button>
+                            </form>
+                        {% endif %}
+                        {# --- AKHIR PERBAIKAN --- #}
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card mb-3">
+
+            {# ... (Sisa card untuk Informasi Pengiriman, Riwayat Pelacakan, dan Detail Produk Dipesan tetap sama) ... #}
+            {% if shipment %}
+            <div class="card shadow-sm border-0 mt-4">
                 <div class="card-header">
-                    Informasi Pengiriman
+                    <i class="fa fa-truck me-2" style="color: var(--petshop-green-primary);"></i>Informasi Pengiriman
                 </div>
-                <div class="card-body">
-                    {% if shipment %}
-                        <p><strong>Penerima:</strong> {{ shipment.name }} ({{ shipment.phone }})</p>
-                        <p><strong>Alamat:</strong> {{ shipment.address }}, {{ shipment.subdistrict }}, {{ shipment.district }}, {{ shipment.city }}, {{ shipment.province }}, {{ shipment.zip_code }}</p>
-                        <p><strong>Kurir:</strong> {{ shipment.courier }} - {{ shipment.service }}</p>
-                        <p><strong>Biaya:</strong> Rp {{ '{:,.0f}'.format(shipment.cost) }}</p>
-                        <p><strong>Nomor Resi:</strong> {{ shipment.tracking_number if shipment.tracking_number else 'Belum tersedia' }}</p>
-                        <p><strong>Dikirim Pada:</strong> {{ shipment.shipped_at.strftime('%d %B %Y, %H:%M') if shipment.shipped_at else 'Belum Dikirim' }}</p>
+                <div class="card-body p-4">
+                    <dl class="row dl-horizontal mb-0">
+                        <dt class="col-sm-5 col-md-4 info-label">Penerima:</dt>
+                        <dd class="col-sm-7 col-md-8 info-value">{{ shipment.name }} {% if shipment.phone %}({{ shipment.phone }}){% endif %}</dd>
+                        <dt class="col-sm-5 col-md-4 info-label">Alamat:</dt>
+                        <dd class="col-sm-7 col-md-8 info-value">{{ shipment.address }}, {{ shipment.subdistrict if shipment.subdistrict else '' }}{{ ', ' if shipment.subdistrict and shipment.district else '' }}{{ shipment.district if shipment.district else '' }}{{ ', ' if shipment.district and shipment.city else '' }}{{ shipment.city if shipment.city else '' }}{{ ', ' if shipment.city and shipment.province else '' }}{{ shipment.province if shipment.province else '' }}{{ ' ' + shipment.zip_code if shipment.zip_code else '' }}</dd>
+                        <dt class="col-sm-5 col-md-4 info-label">Kurir:</dt>
+                        <dd class="col-sm-7 col-md-8 info-value">{{ shipment.courier | upper if shipment.courier else '' }} - {{ shipment.service if shipment.service else '' }}</dd>
+                        <dt class="col-sm-5 col-md-4 info-label">Estimasi Tiba:</dt>
+                        <dd class="col-sm-7 col-md-8 info-value">{{ shipment.estimate if shipment.estimate else '-' }}</dd>
+                        <dt class="col-sm-5 col-md-4 info-label">Biaya Pengiriman:</dt>
+                        <dd class="col-sm-7 col-md-8 info-value">Rp {{ "{:,.0f}".format(shipment.cost if shipment.cost is not none else 0) }}</dd>
+                        <dt class="col-sm-5 col-md-4 info-label">Nomor Resi:</dt>
+                        <dd class="col-sm-7 col-md-8 info-value">
+                            {% if shipment.tracking_number %}
+                                <strong style="color: var(--petshop-green-primary);">{{ shipment.tracking_number }}</strong>
+                            {% else %}
+                                <span class="text-muted fst-italic">Belum diinput</span>
+                            {% endif %}
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+            {% else %}
+             <div class="card shadow-sm border-0 mt-4">
+                <div class="card-header">
+                    <i class="fa fa-truck me-2" style="color: var(--petshop-green-primary);"></i>Informasi Pengiriman
+                </div>
+                 <div class="card-body p-4">
+                     <p class="text-muted m-0">Informasi pengiriman belum tersedia untuk pesanan ini.</p>
+                 </div>
+             </div>
+            {% endif %}
+            
+            {% if shipment and shipment.tracking_number %}
+            <div class="card shadow-sm border-0 mt-4 tracking-history">
+                <div class="card-header">
+                     <i class="fa fa-map-signs me-2" style="color: var(--petshop-green-primary);"></i>Riwayat Pelacakan
+                </div>
+                <div class="card-body p-3">
+                    {% if tracking_error %}
+                        <div class="alert alert-warning small py-2" role="alert">
+                            <i class="fa fa-exclamation-triangle me-1"></i> Gagal memuat riwayat pelacakan: {{ tracking_error }}
+                        </div>
+                    {% elif tracking_history and tracking_history.manifest and tracking_history.manifest|length > 0 %}
+                        <ul class="tracking-history-list">
+                            {% for item in tracking_history.manifest | reverse %}
+                            <li>
+                                <strong>{{ item.manifest_date }} {{ item.manifest_time }}</strong>
+                                <p class="mb-0 ms-1">{{ item.manifest_description }}</p>
+                                {% if item.city_name %}<small class="location ms-1">Lokasi: {{ item.city_name }}</small>{% endif %}
+                            </li>
+                            {% endfor %}
+                        </ul>
                     {% else %}
-                        <p class="text-muted">Informasi pengiriman belum tersedia.</p>
+                        <div class="alert alert-info small py-2" role="alert">
+                            Nomor resi belum bisa dilacak saat ini atau tidak ada riwayat dari ekspedisi. Silakan coba beberapa saat lagi.
+                        </div>
                     {% endif %}
                 </div>
             </div>
-        </div>
-    </div>
-
-    <div class="card mb-3">
-        <div class="card-header">
-            Detail Item Pesanan
-        </div>
-        <div class="card-body">
-            <table class="table table-bordered">
-                <thead>
-                    <tr>
-                        <th>Produk</th>
-                        <th>Harga Satuan</th>
-                        <th>Jumlah</th>
-                        <th>Subtotal Item</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in order_details %}
-                    <tr>
-                        <td>{{ item.product.name }}</td>
-                        <td>Rp {{ '{:,.0f}'.format(item.price) }}</td>
-                        <td>{{ item.quantity }}</td>
-                        <td>Rp {{ '{:,.0f}'.format(item.price * item.quantity) }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <td colspan="3" class="text-end"><strong>Subtotal Produk:</strong></td>
-                        <td class="fw-bold">Rp {{ '{:,.0f}'.format(subtotal) }}</td>
-                    </tr>
-                    <tr>
-                        <td colspan="3" class="text-end"><strong>Biaya Pengiriman:</strong></td>
-                        <td class="fw-bold">Rp {{ '{:,.0f}'.format(shipment.cost if shipment else 0) }}</td>
-                    </tr>
-                    <tr>
-                        <td colspan="3" class="text-end"><strong>Total Keseluruhan:</strong></td>
-                        <td class="fw-bold">Rp {{ '{:,.0f}'.format(order.total) }}</td>
-                    </tr>
-                </tfoot>
-            </table>
-        </div>
-    </div>
-
-    <div class="mb-4">
-        {# Tombol Aksi Admin: Ubah status, input resi, dll. #}
-        {% if order.status == 'processing' and not order.shipment.tracking_number %}
-        {# Link ke halaman input resi untuk admin #}
-        <a href="{{ url_for('admin.admin_ship_order', order_id=order.id) }}" class="btn btn-success me-2">Input Resi & Proses Pengiriman</a>
-        {% endif %}
-
-        {# ... di dalam detail pesanan admin ... #}
-        {% if order.status == 'cancelled' and order.payment_status == 'refund_requested' %}
-        {% set customer_phone = order.shipment.phone if order.shipment else (order.customer.phone_number if order.customer else None) %}
-        {% if customer_phone %}
-        {% set refund_whatsapp_link = generate_whatsapp_refund_link(order, customer_phone) %}
-            {% if refund_whatsapp_link %}
-            <div class="alert alert-info">
-                <p>Pesanan ini telah dibatalkan oleh pelanggan dan memerlukan proses refund.</p>
-                <a href="{{ refund_whatsapp_link }}" class="btn btn-success" target="_blank">
-                    <i class="fab fa-whatsapp"></i> Hubungi Pelanggan via WhatsApp untuk Refund
-                </a>
-                <p><small>Ini akan membuka WhatsApp dengan template pesan untuk dikirim ke pelanggan.</small></p>
+            {% elif order.status == 'shipped' and not (shipment and shipment.tracking_number) %}
+             <div class="card shadow-sm border-0 mt-4">
+                <div class="card-header">
+                    <i class="fa fa-map-signs me-2" style="color: var(--petshop-green-primary);"></i>Riwayat Pelacakan
+                </div>
+                <div class="card-body p-3">
+                     <p class="text-muted small m-0">Nomor resi belum diinput oleh admin.</p>
+                </div>
             </div>
-            {% else %}
-            <p class="text-warning">Tidak dapat membuat link WhatsApp, nomor telepon pelanggan tidak valid atau tidak ada.</p>
             {% endif %}
-        {% else %}
-            <p class="text-warning">Nomor telepon pelanggan tidak ditemukan untuk menghubungi terkait refund.</p>
-        {% endif %}
-        {# Tambahkan tombol/form untuk admin menandai bahwa refund sudah diproses #}
-        <form action="{{ url_for('admin.mark_refund_processed', order_id=order.id) }}" method="POST">
-            <button type="submit" class="btn btn-info mt-2">Tandai Refund Sudah Diproses</button>
-        </form>
-        {% endif %}
         </div>
+
+        <div class="col-lg-5">
+             <div class="card shadow-sm border-0">
+                <div class="card-header">
+                    <i class="fa fa-shopping-basket me-2" style="color: var(--petshop-green-primary);"></i>Produk Dipesan
+                </div>
+                <div class="card-body p-0"> 
+                    <div class="table-responsive">
+                        <table class="table table-items mb-0">
+                            <tbody>
+                                {% for detail in order_details %}
+                                <tr style="border-bottom: 1px solid #f1f1f1;">
+                                    <td class="py-3 ps-3">
+                                        <div class="d-flex align-items-center">
+                                            <img src="{{ detail.product.image_url if detail.product.image_url else url_for('static', filename='famms_template/images/p1.png') }}" alt="{{ detail.product.name }}" class="mr-3" height="50" width="50" >
+                                            <div>
+                                                <a href="{{ url_for('products.product_detail', product_id=detail.product.id) }}" class="text-dark" style="font-weight: 500; font-size:0.9rem; text-decoration:none;">{{ detail.product.name }}</a>
+                                                <small class="d-block text-muted">{{ detail.quantity }} x Rp {{ '{:,.0f}'.format(detail.price) }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-end align-middle fw-bold pe-3" style="font-size: 0.9rem;">
+                                        Rp {{ '{:,.0f}'.format(detail.quantity * detail.price) }}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer bg-white p-3">
+                    <ul class="list-group list-group-flush" style="font-size: 0.95rem;">
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-1">
+                            <span>Subtotal Barang:</span>
+                            <span class="fw-bold">Rp {{ '{:,.0f}'.format(subtotal) }}</span> 
+                        </li>
+                        {% if shipment and shipment.cost is not none %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-1">
+                            <span>Biaya Pengiriman:</span>
+                            <span class="fw-bold">Rp {{ '{:,.0f}'.format(shipment.cost) }}</span>
+                        </li>
+                        {% endif %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0 pt-2 mt-2 border-top h5 mb-0">
+                            <strong>Total Pesanan:</strong>
+                            <strong class="total-summary-value">Rp {{ '{:,.0f}'.format(order.total) }}</strong>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4 pt-3 border-top text-center">
+        <a href="{{ url_for('admin.order_management') }}" class="btn btn-outline-secondary btn-back-list">
+            <i class="fa fa-arrow-left"></i> Kembali ke Manajemen Pesanan
+        </a>
+    </div>
 </div>
+{% endblock %}
+
+{% block scripts_page %}
+{# Tidak ada JS spesifik untuk halaman ini saat ini #}
 {% endblock %}

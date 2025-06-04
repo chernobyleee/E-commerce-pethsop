@@ -1,115 +1,299 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PetShop - {% block title %}{% endblock %}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        body { padding-top: 56px; } /* Adjust for fixed navbar */
-        .footer {
-            background-color: #f8f9fa;
-            padding: 20px 0;
-            text-align: center;
-            position: relative;
-            bottom: 0;
-            width: 100%;
-        }
-    </style>
-    {% block head %}{% endblock %}
-</head>
-<body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="{{ url_for('main.home') }}">PetShop</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('products.product_list') }}">Products</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('main.track_order_page') }}">Tracking order</a>
-                    </li>
-                    {% if current_user.is_authenticated %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('cart.view_cart') }}">Cart <i class="fas fa-shopping-cart"></i></a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('orders.order_list') }}">My Orders</a>
-                    </li>
-                    {% endif %}
-                    {# Add Admin Link if needed #}
-                    {% if current_user.is_authenticated and current_user.role == 'admin' %}
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Admin
-                        </a>
-                        <ul class="dropdown-menu" aria-labelledby="adminDropdown">
-                            <li><a class="dropdown-item" href="{{ url_for('admin.dashboard') }}">Dashboard</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('admin.product_management') }}">Manage Products</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('admin.category_management') }}">Manage Categories</a></li> 
-                            <li><a class="dropdown-item" href="{{ url_for('admin.order_management') }}">Manage Orders</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('admin.user_management') }}">Manage User</a></li>
-                            
-                            {# Tambahkan link admin lainnya di sini #}
-                        </ul>
-                    </li>
-                    {% endif %}
-                </ul>
-                <ul class="navbar-nav ms-auto">
-                    {% if current_user.is_authenticated %}
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Halo, {{ current_user.name }}
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                                <li><a class="dropdown-item" href="{{ url_for('users.profile') }}">Profile</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{{ url_for('users.logout') }}">Logout</a></li>
-                            </ul>
-                        </li>
-                    {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('users.login') }}">Login</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('users.register') }}">Register</a>
-                        </li>
-                    {% endif %}
-                </ul>
-            </div>
-        </div>
-    </nav>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="keywords" content="PetShop, Toko Hewan, Makanan Anjing, Makanan Kucing, Aksesoris Hewan, Perawatan Hewan Peliharaan Ciampea Bogor" />
+    <meta name="description" content="PetShopin - Solusi Lengkap Kebutuhan Hewan Kesayangan Anda di Ciampea, Bogor. Temukan produk berkualitas dengan harga terbaik." />
+    <meta name="author" content="PetShopin" />
+    
+    <link rel="shortcut icon" href="{{ url_for('static', filename='famms_template/images/favicon.png') }}" type="image/x-icon"> 
 
-    <main class="container py-4">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <div class="mt-3">
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                {% endfor %}
+    <title>PetShopin - {% block title %}Rumah Kebutuhan Hewan Kesayangan Anda{% endblock %}</title>
+
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='famms_template/css/bootstrap.css') }}" />
+    <link href="{{ url_for('static', filename='famms_template/css/font-awesome.min.css') }}" rel="stylesheet" />
+    <link href="{{ url_for('static', filename='famms_template/css/style.css') }}" rel="stylesheet" />
+    <link href="{{ url_for('static', filename='famms_template/css/responsive.css') }}" rel="stylesheet" />
+
+    <style>
+        :root {
+            --petshop-green-primary: #28a745; 
+            --petshop-green-darker: #218838; 
+            --petshop-text-on-green: #ffffff;
+            --navbar-text-color: #2c3e50;
+            --navbar-brand-img-height: 45px;
+            --body-padding-top: 70px; 
+        }
+        /* ... (CSS lainnya yang sudah ada sebelumnya tetap di sini) ... */
+        .header_section.fixed-top {
+            background-color: #ffffff; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding-top: .5rem; 
+            padding-bottom: .5rem;
+        }
+        .custom_nav-container .navbar-brand img {
+            max-height: var(--navbar-brand-img-height);
+            width: auto;
+        }
+        .custom_nav-container .navbar-nav .nav-link {
+            color: var(--navbar-text-color);
+            font-weight: 500; 
+            text-transform: uppercase; 
+            font-size: 0.875rem; 
+            padding: 0.5rem 0.75rem; 
+        }
+         .custom_nav-container .navbar-nav .nav-item.dropdown .dropdown-menu {
+            border-radius: 0.25rem; border: 1px solid #e0e0e0;
+            box-shadow: 0 .25rem .75rem rgba(0,0,0,.1);
+        }
+        .custom_nav-container .navbar-nav .nav-item.dropdown .dropdown-item {
+            font-size: 0.9rem; padding: .5rem 1rem;
+        }
+        .custom_nav-container .navbar-nav .nav-item.dropdown .dropdown-item:hover {
+            background-color: #f0f0f0; color: var(--petshop-green-primary);
+        }
+        .navbar-toggler { border: 1px solid #ddd; }
+        .custom_nav-container .navbar-toggler span { background-color: var(--navbar-text-color); }
+        .custom_nav-container .navbar-toggler:focus { box-shadow: none; }
+        
+        .navbar-collapse { justify-content: space-between; }
+        ul.navbar-nav.main-nav-items {}
+        ul.navbar-nav.user-nav-items { 
+            margin-left: auto; 
+            flex-direction: row; 
+            align-items: center; 
+        }
+        ul.navbar-nav.user-nav-items .nav-item { margin-left: 0.75rem; }
+        ul.navbar-nav.user-nav-items .nav-link i.fa { font-size: 1.2rem; vertical-align: middle; }
+        ul.navbar-nav.user-nav-items .nav-link .d-lg-none { font-size: 0.8rem; }
+
+        body { 
+            padding-top: var(--body-padding-top); 
+            display: flex; flex-direction: column; min-height: 100vh;
+        }
+        main { flex: 1 0 auto; padding-top: 1.5rem; padding-bottom: 1.5rem; }
+        .footer_section { flex-shrink: 0; }
+
+        /* Warna Hijau Global */
+        .heading_container h2::after { background: var(--petshop-green-primary) !important; }
+        .custom_nav-container .navbar-nav .nav-item .nav-link:hover, 
+        .custom_nav-container .navbar-nav .nav-item.active .nav-link { color: var(--petshop-green-primary) !important; }
+        .custom_nav-container .navbar-nav .nav-item .nav-link:hover svg, 
+        .custom_nav-container .navbar-nav .nav-item.active .nav-link svg { fill: var(--petshop-green-primary) !important; }
+        .slider_section .detail-box h1 span { color: var(--petshop-green-primary) !important; }
+        .slider_section .detail-box a.btn1,
+        .product_section .options .option1,
+        .product_section .btn-box a,
+        .arrival_section a,
+        .subscribe_section .subscribe_form form button,
+        .client_section .carousel-control-prev,
+        .client_section .carousel-control-next,
+        .inner_page_head,
+        .btn-primary, .btn-success { /* Tombol umum juga bisa diberi warna hijau */
+            background-color: var(--petshop-green-primary) !important;
+            border-color: var(--petshop-green-primary) !important;
+            color: var(--petshop-text-on-green) !important;
+        }
+        .inner_page_head h3 { color: var(--petshop-text-on-green) !important; }
+        .slider_section .detail-box a.btn1:hover,
+        .product_section .options .option1:hover,
+        .product_section .btn-box a:hover,
+        .arrival_section a:hover,
+        .subscribe_section .subscribe_form form button:hover,
+        .btn-primary:hover, .btn-success:hover {
+            background-color: var(--petshop-green-darker) !important; 
+            color: var(--petshop-text-on-green) !important; 
+            border-color: var(--petshop-green-darker) !important;
+        }
+        .slider_section .carousel-indicators li.active { background-color: var(--petshop-green-primary) !important; }
+        .footer_section .footer_contact .contact_link_box a:hover { color: var(--petshop-green-lighter) !important; }
+        .footer_section .footer_social a:hover { background-color: var(--petshop-green-primary) !important; color: var(--petshop-text-on-green) !important; }
+        .cpy_ p a { color: var(--petshop-green-primary) !important; }
+
+    </style>
+    {% block head_extra %}{% endblock %}
+</head>
+<body class="{% if request.blueprint == 'admin' %}admin-page{% else %}bg-light{% endif %}">
+    
+    <header class="header_section fixed-top">
+        <div class="container-fluid px-lg-4">
+            <nav class="navbar navbar-expand-lg custom_nav-container">
+                <a class="navbar-brand" href="{{ url_for('main.home') }}">
+                    <img src="{{ url_for('static', filename='famms_template/images/logo.png') }}" alt="PetShopin Logo" /> 
+                </a>
+                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class=""> </span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav main-nav-items mx-auto"> 
+                        <li class="nav-item {% if request.endpoint == 'main.home' %}active{% endif %}">
+                            <a class="nav-link" href="{{ url_for('main.home') }}">BERANDA</a>
+                        </li>
+                        <li class="nav-item {% if request.blueprint == 'products' %}active{% endif %}">
+                            <a class="nav-link" href="{{ url_for('products.product_list') }}">PRODUK</a>
+                        </li>
+                        <li class="nav-item {% if request.endpoint == 'main.about_page' %}active{% endif %}">
+                            <a class="nav-link" href="{{ url_for('main.about_page') }}">TENTANG KAMI</a>
+                        </li>
+                         <li class="nav-item {% if request.endpoint == 'main.track_order_page' %}active{% endif %}">
+                            <a class="nav-link" href="{{ url_for('main.track_order_page') }}">LACAK PESANAN</a>
+                        </li>
+                    </ul>
+
+                    <ul class="navbar-nav user-nav-items"> 
+                        {% if current_user.is_authenticated %}
+                            <li class="nav-item {% if request.blueprint == 'cart' %}active{% endif %}">
+                                <a class="nav-link" href="{{ url_for('cart.view_cart') }}" title="Keranjang Belanja">
+                                    <i class="fa fa-shopping-cart" aria-hidden="true"></i>
+                                    <span class="d-lg-none ms-1">Keranjang</span>
+                                </a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="userAccountDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <i class="fa fa-user" aria-hidden="true"></i>
+                                    <span class="d-none d-lg-inline"> Halo, {{ current_user.name.split(' ')[0] if current_user.name else 'User' }}</span>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="userAccountDropdown">
+                                    <li><a class="dropdown-item" href="{{ url_for('users.profile') }}">Profil Saya</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('orders.order_list') }}">Pesanan Saya</a></li>
+                                    {% if current_user.role == 'admin' %}
+                                    <li><hr class="dropdown-divider"></li>
+                                    {# --- MENU ADMIN BARU --- #}
+                                    <li><h6 class="dropdown-header small text-muted">Menu Admin</h6></li>
+                                    <li><a class="dropdown-item {% if request.endpoint == 'admin.dashboard' %}active{% endif %}" href="{{ url_for('admin.dashboard') }}"><i class="fa fa-dashboard fa-fw me-2"></i>Dasbor</a></li>
+                                    <li><a class="dropdown-item {% if request.endpoint == 'admin.product_management' %}active{% endif %}" href="{{ url_for('admin.product_management') }}"><i class="fa fa-tags fa-fw me-2"></i>Kelola Produk</a></li>
+                                    <li><a class="dropdown-item {% if request.endpoint == 'admin.category_management' %}active{% endif %}" href="{{ url_for('admin.category_management') }}"><i class="fa fa-sitemap fa-fw me-2"></i>Kelola Kategori</a></li>
+                                    <li><a class="dropdown-item {% if request.endpoint == 'admin.order_management' %}active{% endif %}" href="{{ url_for('admin.order_management') }}"><i class="fa fa-list-alt fa-fw me-2"></i>Kelola Pesanan</a></li>
+                                    <li><a class="dropdown-item {% if request.endpoint == 'admin.user_management' %}active{% endif %}" href="{{ url_for('admin.user_management') }}"><i class="fa fa-users fa-fw me-2"></i>Kelola Pengguna</a></li>
+                                    {# --- AKHIR MENU ADMIN BARU --- #}
+                                    {% endif %}
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('users.logout') }}"><i class="fa fa-sign-out fa-fw me-2"></i>Logout</a></li>
+                                </ul>
+                            </li>
+                        {% else %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('users.login') }}">LOGIN</a>
+                            </li>
+                             <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('users.register') }}">DAFTAR</a>
+                            </li>
+                        {% endif %}
+                    </ul>
                 </div>
-            {% endif %}
-        {% endwith %}
+            </nav>
+        </div>
+    </header>
+    
+    {% block top_content_section %}
+        {% if request.endpoint != 'main.home' and request.blueprint != 'admin' %} {# Jangan tampilkan inner_page_head di admin juga #}
+            <section class="inner_page_head">
+                <div class="container-fluid">
+                   <div class="row">
+                      <div class="col-md-12">
+                         <div class="full">
+                            <h3>{% block page_title %}{{ self.title() }}{% endblock %}</h3>
+                         </div>
+                      </div>
+                   </div>
+                </div>
+            </section>
+        {% endif %}
+    {% endblock top_content_section %}
+
+    <main class="py-4">
+        {# Container untuk flash messages dipindahkan ke sini agar tidak full width #}
+        <div class="container"> 
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="mt-0 mb-3"> {# Disesuaikan marginnya agar tidak terlalu atas jika tidak ada top_content_section #}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                    {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+        </div>
 
         {% block content %}{% endblock %}
     </main>
 
-    <footer class="footer mt-auto py-3 bg-light">
+    <footer class="footer_section">
+        {# ... (Konten footer tetap sama seperti sebelumnya) ... #}
         <div class="container">
-            <span class="text-muted">&copy; {{ datetime.utcnow().year }} PetShop. All rights reserved.</span>
+           <div class="row">
+              <div class="col-md-4 footer-col">
+                 <div class="footer_contact">
+                    <h4>
+                       Hubungi Kami
+                    </h4>
+                    <div class="contact_link_box">
+                       <a href="#"> 
+                       <i class="fa fa-map-marker" aria-hidden="true"></i>
+                       <span>
+                       Jl. Raya Dramaga No. 1, Kampus IPB, Bogor
+                       </span>
+                       </a>
+                       <a href="https://wa.me/628123456789" target="_blank">
+                       <i class="fa fa-whatsapp" aria-hidden="true"></i>
+                       <span>
+                       WhatsApp: +62 812-3456-789
+                       </span>
+                       </a>
+                       <a href="mailto:kontak@petshopin.com"> 
+                       <i class="fa fa-envelope" aria-hidden="true"></i>
+                       <span>
+                       kontak@petshopin.com
+                       </span>
+                       </a>
+                    </div>
+                 </div>
+              </div>
+              <div class="col-md-4 footer-col">
+                 <div class="footer_detail">
+                    <a href="{{ url_for('main.home') }}" class="footer-logo">
+                       PetShopin
+                    </a>
+                    <p>
+                       Penuhi semua kebutuhan hewan kesayangan Anda bersama kami. Produk berkualitas, layanan terpercaya.
+                    </p>
+                    <div class="footer_social">
+                       <a href="#" title="Facebook"><i class="fa fa-facebook" aria-hidden="true"></i></a>
+                       <a href="#" title="Instagram"><i class="fa fa-instagram" aria-hidden="true"></i></a>
+                    </div>
+                 </div>
+              </div>
+              <div class="col-md-4 footer-col">
+                 <h4>
+                    Jam Operasional
+                 </h4>
+                 <p>Senin - Jumat: 08:00 - 20:00 WIB</p>
+                 <p>Sabtu: 09:00 - 17:00 WIB</p>
+                 <p>Minggu & Hari Libur: Tutup (Online 24 Jam)</p>
+              </div>
+           </div>
+           <div class="footer-info">
+              <div class="col-lg-12 mx-auto px-0 text-center"> 
+                 <p>
+                    &copy; <span id="displayYear"></span> Hak Cipta Dilindungi. <strong>PetShopin</strong>.
+                 </p>
+              </div>
+           </div>
         </div>
-    </footer>
+     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='famms_template/js/jquery-3.4.1.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='famms_template/js/popper.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='famms_template/js/bootstrap.js') }}"></script>
+    <script src="{{ url_for('static', filename='famms_template/js/custom.js') }}"></script>
     
-    {% block scripts %}{% endblock %}
+    {% block scripts_page %}{% endblock %}
 </body>
 </html>

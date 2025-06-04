@@ -2,125 +2,205 @@
 {% extends 'base.html' %}
 {% import "macros/_form_helpers.html" as form_helpers %}
 
-{% block title %}{% if product %}Edit Product{% else %}Add New Product{% endif %}{% endblock %}
+{% block title %}{% if product %}Edit Produk{% else %}Tambah Produk Baru{% endif %} - PetShopin Admin{% endblock %}
+
+{# Halaman admin tidak menggunakan inner_page_head dari base.html #}
+{% block top_content_section %}{% endblock %}
+{% block page_title %}{% endblock %} 
+
+{% block head_extra %}
+<style>
+    .admin-page-content { /* Wrapper untuk konten admin */
+        padding-top: 1.5rem;
+        padding-bottom: 1.5rem;
+    }
+    .admin-page-content .page-header {
+        margin-bottom: 1.5rem;
+    }
+    .admin-page-content .page-title {
+        font-size: 1.75rem;
+        font-weight: 600;
+        color: #4a5568;
+    }
+    .admin-page-content .card {
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 .125rem .25rem rgba(0,0,0,.075)!important;
+    }
+    .admin-page-content .card-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #e2e8f0;
+        font-weight: 500;
+        color: var(--navbar-text-color);
+        padding: .75rem 1.25rem;
+        font-size: 1.1rem;
+    }
+    .admin-page-content .form-label {
+        font-weight: 500;
+        font-size: 0.9rem;
+    }
+    .admin-page-content .form-control, 
+    .admin-page-content .form-select { /* Terapkan juga ke select jika ada */
+        font-size: 0.9rem;
+    }
+    .admin-page-content .btn-submit-product {
+        background-color: var(--petshop-green-primary);
+        border-color: var(--petshop-green-primary);
+        color: white;
+        font-weight: 500;
+    }
+    .admin-page-content .btn-submit-product:hover {
+        background-color: var(--petshop-green-darker);
+        border-color: var(--petshop-green-darker);
+    }
+    .existing-images-grid .card-img-top {
+        height: 150px; 
+        object-fit: contain; /* Agar gambar tidak terdistorsi dan pas */
+        background-color: #f8f9fa; /* Background untuk gambar transparan */
+    }
+    .existing-images-grid .card-body {
+        padding: 0.75rem;
+        text-align: center;
+    }
+    .existing-images-grid .form-check-label {
+        font-size: 0.8rem;
+    }
+    .existing-images-grid .btn-sm {
+        font-size: 0.75rem;
+        padding: .2rem .4rem;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<h1 class="mb-4">{% if product %}Edit Product: {{ product.name }}{% else %}Add New Product{% endif %}</h1>
-
-{# Pesan flash secara umum (misalnya 'Product added successfully!') #}
-{% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-        {% for category, message in messages %}
-            <div class="alert alert-{{ category }}">{{ message }}</div>
-        {% endfor %}
-    {% endif %}
-{% endwith %}
-
-<form method="POST" enctype="multipart/form-data" action="{% if product %}{{ url_for('admin.edit_product', product_id=product.id) }}{% else %}{{ url_for('admin.add_product') }}{% endif %}">
-    {{ form.hidden_tag() }}
-
-    {# Render setiap field menggunakan macro form_helpers.render_field #}
-    {{ form_helpers.render_field(form.name) }}
-    {{ form_helpers.render_field(form.category_id) }} 
-    {{ form_helpers.render_field(form.description) }}
-    {{ form_helpers.render_field(form.price) }}
-    {{ form_helpers.render_field(form.stock) }}
-    {{ form_helpers.render_field(form.weight) }}
-    
-    {# --- BAGIAN UNTUK UPLOAD GAMBAR BARU --- #}
-    <hr>
-    <h3>Product Images</h3>
-    <div class="mb-3">
-        {{ form.thumbnail_upload.label(class="form-label") }}
-        {{ form.thumbnail_upload(class="form-control", accept="image/*") }}
-        {% if form.thumbnail_upload.errors %}
-            <div class="invalid-feedback d-block">
-                {% for error in form.thumbnail_upload.errors %}
-                    <span>{{ error }}</span>
-                {% endfor %}
-            </div>
-        {% endif %}
-        <small class="form-text text-muted">Upload a new image to be the main thumbnail. If not provided, it will use the first image from gallery or existing thumbnail.</small>
+<div class="container-fluid admin-page-content px-md-4">
+    <div class="page-header">
+        <h1 class="page-title">{% if product %}Edit Produk: {{ product.name }}{% else %}Tambah Produk Baru{% endif %}</h1>
     </div>
 
-    <div class="mb-3">
-        {{ form.gallery_uploads.label(class="form-label") }}
-        {{ form.gallery_uploads(class="form-control", multiple=true, accept="image/*") }}
-        {% if form.gallery_uploads.errors %}
-            <div class="invalid-feedback d-block">
-                {% for error in form.gallery_uploads.errors %}
-                    <span>{{ error }}</span>
-                {% endfor %}
-            </div>
-        {% endif %}
-        <small class="form-text text-muted">Upload multiple additional images for the product gallery.</small>
-    </div>
-    {# --- AKHIR BAGIAN UPLOAD GAMBAR BARU --- #}
+    {% include '_messages.html' %}
 
-    {# --- BAGIAN UNTUK MENGELOLA GAMBAR YANG SUDAH ADA (HANYA MODE EDIT) --- #}
-    {% if product and product.images %}
-        <h4 class="mt-4">Existing Images</h4>
-        <div class="row row-cols-1 row-cols-md-3 g-4 mb-4">
-            {% for image in product.images %}
-            <div class="col">
-                <div class="card h-100">
-                    <img src="{{ url_for('static', filename='uploads/products/' + image.name) }}" class="card-img-top" alt="Product Image" style="height: 150px; object-fit: cover;">
-                    <div class="card-body">
-                        <p class="card-text">
-                            {% if image.is_thumbnail %}
-                                <span class="badge bg-primary">Current Thumbnail</span>
-                            {% else %}
-                                <label class="form-check-label">
-                                    <input type="radio" name="set_as_thumbnail_id" value="{{ image.id }}" class="form-check-input"> Set as Thumbnail
-                                </label>
-                            {% endif %}
-                        </p>
-                        <button type="button" class="btn btn-danger btn-sm mt-2 delete-image-btn" data-image-id="{{ image.id }}" data-image-name="{{ image.name }}">Delete</button>
+    <div class="card shadow-sm border-0">
+        <div class="card-header">
+            <i class="fa {% if product %}fa-edit{% else %}fa-plus-square{% endif %} me-2" style="color: var(--petshop-green-primary);"></i>
+            Formulir Produk
+        </div>
+        <div class="card-body p-4">
+            <form method="POST" enctype="multipart/form-data" action="{% if product %}{{ url_for('admin.edit_product', product_id=product.id) }}{% else %}{{ url_for('admin.add_product') }}{% endif %}">
+                {{ form.hidden_tag() }}
+
+                <div class="row">
+                    <div class="col-md-6">
+                        {{ form_helpers.render_field(form.name, class="form-control form-control-sm", placeholder="Nama Produk") }}
+                    </div>
+                    <div class="col-md-6">
+                         {% if form.category_id %} {# Pastikan field category_id ada di form #}
+                            {{ form_helpers.render_field(form.category_id, class="form-select form-select-sm") }}
+                         {% endif %}
                     </div>
                 </div>
-            </div>
-            {% endfor %}
+                
+                {{ form_helpers.render_field(form.description, rows="5", class="form-control form-control-sm", placeholder="Deskripsi detail produk...") }}
+                
+                <div class="row">
+                    <div class="col-md-4">
+                        {{ form_helpers.render_field(form.price, class="form-control form-control-sm", type="number", step="0.01", placeholder="Harga (misal: 50000)") }}
+                    </div>
+                    <div class="col-md-4">
+                        {{ form_helpers.render_field(form.stock, class="form-control form-control-sm", type="number", placeholder="Jumlah Stok") }}
+                    </div>
+                    <div class="col-md-4">
+                        {{ form_helpers.render_field(form.weight, class="form-control form-control-sm", type="number", placeholder="Berat dalam gram") }}
+                    </div>
+                </div>
+                
+                <hr class="my-4">
+                <h5 class="mb-3">Gambar Produk</h5>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form.thumbnail_upload.label(class="form-label") }}
+                        {{ form.thumbnail_upload(class="form-control form-control-sm", accept="image/*") }}
+                        {% if form.thumbnail_upload.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.thumbnail_upload.errors %}<span>{{ error }}</span>{% endfor %}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted">Gambar utama produk. Akan menjadi thumbnail.</small>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        {{ form.gallery_uploads.label(class="form-label") }}
+                        {{ form.gallery_uploads(class="form-control form-control-sm", multiple=true, accept="image/*") }}
+                        {% if form.gallery_uploads.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.gallery_uploads.errors %}<span>{{ error }}</span>{% endfor %}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted">Unggah gambar tambahan untuk galeri (bisa lebih dari satu).</small>
+                    </div>
+                </div>
+
+                {% if product and product.images and product.images|length > 0 %}
+                    <h6 class="mt-4 mb-3">Gambar yang Sudah Ada:</h6>
+                    <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3 mb-4 existing-images-grid">
+                        {% for image in product.images %}
+                        <div class="col">
+                            <div class="card h-100">
+                                <img src="{{ url_for('static', filename='uploads/products/' + image.name) }}" class="card-img-top" alt="Product Image">
+                                <div class="card-body">
+                                    <div class="form-check mb-2">
+                                        <input type="radio" name="set_as_thumbnail_id" value="{{ image.id }}" class="form-check-input" id="thumb_{{image.id}}" {% if image.is_thumbnail %}checked{% endif %}>
+                                        <label class="form-check-label" for="thumb_{{image.id}}">Jadikan Thumbnail</label>
+                                    </div>
+                                    <button type="button" class="btn btn-outline-danger btn-sm delete-image-btn w-100" data-image-id="{{ image.id }}" data-image-name="{{ image.name }}"><i class="fa fa-trash-alt"></i> Hapus</button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <input type="hidden" name="delete_image_ids" id="delete_image_ids_input">
+                {% endif %}
+
+                <hr class="my-4">
+                <div class="d-flex justify-content-end">
+                    <a href="{{ url_for('admin.product_management') }}" class="btn btn-outline-secondary me-2">Batal</a>
+                    <button type="submit" class="btn btn-submit-product">
+                        <i class="fa fa-save"></i> {% if product %}Update Produk{% else %}Simpan Produk{% endif %}
+                    </button>
+                </div>
+            </form>
         </div>
-        {# Hidden input untuk ID gambar yang akan dihapus #}
-        <input type="hidden" name="delete_image_ids" id="delete_image_ids_input">
-    {% endif %}
-    {# --- AKHIR BAGIAN MENGELOLA GAMBAR --- #}
+    </div>
+</div>
+{% endblock %}
 
-    <button type="submit" class="btn btn-success">{% if product %}Update Product{% else %}Add Product{% endif %}</button>
-    <a href="{{ url_for('admin.product_management') }}" class="btn btn-secondary">Cancel</a>
-</form>
-
-{# JavaScript untuk konfirmasi delete dan mengumpulkan ID gambar yang dihapus #}
-{% block scripts %}
-    {{ super() }} {# Mempertahankan script dari base.html #}
+{% block scripts_page %} {# Menggunakan scripts_page agar konsisten dengan base.html #}
+    {{ super() if super }} {# Mempertahankan script dari base.html jika ada di blok scripts_page #}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const deleteButtons = document.querySelectorAll('.delete-image-btn');
-            const deleteImageIds = new Set(); // Menggunakan Set untuk menghindari duplikasi
+            const deleteImageIdsInput = document.getElementById('delete_image_ids_input');
+            const deleteImageIds = new Set(deleteImageIdsInput.value ? deleteImageIdsInput.value.split(',') : []);
 
             deleteButtons.forEach(button => {
                 button.addEventListener('click', function() {
                     const imageId = this.dataset.imageId;
                     const imageName = this.dataset.imageName;
                     
-                    if (confirm(`Are you sure you want to delete image "${imageName}"?`)) {
-                        deleteImageIds.add(imageId); // Tambahkan ID ke Set
-                        this.closest('.col').remove(); // Hapus tampilan kartu gambar dari DOM
-
-                        // Update hidden input field
-                        document.getElementById('delete_image_ids_input').value = Array.from(deleteImageIds).join(',');
+                    if (confirm(`Apakah Anda yakin ingin menghapus gambar "${imageName}"? Perubahan akan disimpan saat Anda update produk.`)) {
+                        deleteImageIds.add(imageId); 
+                        this.closest('.col').style.display = 'none'; // Sembunyikan kartu gambar
+                        deleteImageIdsInput.value = Array.from(deleteImageIds).join(',');
                     }
                 });
             });
 
-            // Perbarui nilai hidden input saat form disubmit (jika ada perubahan yang tidak terdeteksi click)
-            const productForm = document.querySelector('form');
+            const productForm = document.querySelector('form'); // Asumsi hanya ada satu form di halaman ini
             if (productForm) {
                 productForm.addEventListener('submit', function() {
-                    document.getElementById('delete_image_ids_input').value = Array.from(deleteImageIds).join(',');
+                    // Pastikan nilai terakhir dari deleteImageIds tersimpan sebelum submit
+                    deleteImageIdsInput.value = Array.from(deleteImageIds).join(',');
                 });
             }
         });
     </script>
-{% endblock %}
-{% endblock %}
+{% endblock scripts_page %}

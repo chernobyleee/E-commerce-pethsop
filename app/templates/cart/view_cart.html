@@ -1,89 +1,169 @@
-{% extends 'base.html' %}
+{% extends 'base.html' %} {# Pastikan ini adalah base.html yang sudah terintegrasi dengan Famms #}
 
-{% block title %}Shopping Cart{% endblock %}
+{% block title %}Keranjang Belanja - PetShopin{% endblock %}
+
+{% block page_title %}Keranjang Belanja Anda{% endblock %}
 
 {% block content %}
-<h1 class="mb-4">Your Shopping Cart</h1>
+<div class="container cart-page py-4">
+    {# Menggunakan inner_page_head dari base.html untuk judul halaman jika tidak di-override oleh block top_content_section #}
+    {# Jika Anda ingin judul "Keranjang Belanja Anda" ada di dalam section inner_page_head, #}
+    {# maka Anda tidak perlu h1 di sini, dan pastikan base.html menampilkannya dari block page_title #}
+    {# Untuk sekarang, kita biarkan h1 di sini jika inner_page_head tidak aktif di base.html untuk halaman ini #}
+    {# <h1 class="text-center mb-4">Keranjang Belanja Anda</h1> #}
 
-{% if cart_items %}
-<div class="table-responsive">
-    <table class="table table-bordered">
-        <thead>
-            <tr>
-                <th>Product</th>
-                <th>Price</th>
-                <th>Quantity</th>
-                <th>Subtotal</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in cart_items %}
-            <tr>
-                <td>
-                    <div class="d-flex align-items-center">
-                        {% if item.product.image_url %}
-                        <img src="{{ item.product.image_url }}" alt="{{ item.product.name }}" class="img-thumbnail me-2" style="width: 50px; height: 50px; object-fit: cover;">
-                        {% endif %}
-                        {{ item.product.name }}
+    {% include '_messages.html' %} {# Untuk menampilkan flash messages #}
+
+    {% if cart_items %}
+    <div class="row">
+        {# Kolom Kiri: Daftar Item Keranjang #}
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light py-3">
+                    <h5 class="mb-0">Item di Keranjang ({{ cart_items|length }} Produk)</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table cart-table mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th scope="col" class="border-0" style="width: 55%;">Produk</th>
+                                    <th scope="col" class="border-0 text-center" style="width: 15%;">Harga</th>
+                                    <th scope="col" class="border-0 text-center" style="width: 15%;">Jumlah</th>
+                                    <th scope="col" class="border-0 text-center" style="width: 15%;">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in cart_items %}
+                                <tr class="cart-item-row">
+                                    <td class="border-top-0">
+                                        <div class="d-flex align-items-center">
+                                            <a href="{{ url_for('products.product_detail', product_id=item.product.id) }}">
+                                                <img src="{{ item.product.image_url if item.product.image_url else url_for('static', filename='famms_template/images/p1.png') }}" 
+                                                     alt="{{ item.product.name }}" 
+                                                     class="img-fluid rounded me-3" 
+                                                     style="width: 60px; height: 60px; object-fit: contain; border: 1px solid #eee;">
+                                            </a>
+                                            <div>
+                                                <a href="{{ url_for('products.product_detail', product_id=item.product.id) }}" class="text-dark fw-bold" style="text-decoration: none; font-size: 0.95rem;">
+                                                    {{ item.product.name }}
+                                                </a>
+                                                {# Tombol Hapus Item (di bawah nama produk untuk mobile friendly) #}
+                                                {% if not (current_user.is_authenticated and current_user.role == 'admin') %}
+                                                <form action="{{ url_for('cart.remove_from_cart', cart_id=item.id) }}" method="POST" class="d-inline mt-1">
+                                                    <button type="submit" class="btn btn-link text-danger p-0" 
+                                                            onclick="return confirm('Apakah Anda yakin ingin menghapus item ini dari keranjang?')"
+                                                            title="Hapus Item" style="font-size: 0.8rem;">
+                                                        <i class="fa fa-trash-o ml-3"></i> Hapus
+                                                    </button>
+                                                </form>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center align-middle border-top-0">
+                                        <span style="font-size: 0.9rem;">Rp {{ '{:,.0f}'.format(item.product.price) }}</span>
+                                    </td>
+                                    <td class="text-center align-middle border-top-0">
+                                        {% if current_user.is_authenticated and current_user.role == 'admin' %}
+                                            {{ item.quantity }}
+                                        {% else %}
+                                            <form action="{{ url_for('cart.update_cart') }}" method="POST" class="d-flex justify-content-center align-items-center">
+                                                <input type="hidden" name="cart_id" value="{{ item.id }}">
+                                                <input type="number" name="quantity" value="{{ item.quantity }}" 
+                                                       min="1" max="{{ item.product.stock + item.quantity }}" {# Max adalah stok saat ini + yg sudah di cart #}
+                                                       class="form-control form-control-sm text-center me-1" 
+                                                       style="width: 60px;" 
+                                                       onchange="this.form.submit()"> {# Auto update on change #}
+                                                {# Tombol update bisa disembunyikan jika onchange sudah cukup #}
+                                                {# <button type="submit" class="btn btn-sm btn-outline-secondary" title="Update Jumlah"><i class="fa fa-check"></i></button> #}
+                                            </form>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center align-middle fw-bold border-top-0">
+                                        <span style="font-size: 0.9rem;">Rp {{ '{:,.0f}'.format(item.subtotal) }}</span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
-                </td>
-                <td>Rp {{ '{:,.0f}'.format(item.product.price) }}</td>
-                <td>
-                    {# Kondisi untuk menyembunyikan form update cart untuk admin #}
-                    {% if current_user.is_authenticated and current_user.role == 'admin' %}
-                        {{ item.quantity }}
-                    {% else %}
-                        <form action="{{ url_for('cart.update_cart') }}" method="POST" class="d-flex">
-                            <input type="hidden" name="cart_id" value="{{ item.id }}">
-                            <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="{{ item.product.stock }}" class="form-control w-auto me-2">
-                            <button type="submit" class="btn btn-sm btn-info" title="Update Quantity"><i class="fas fa-sync-alt"></i></button>
-                        </form>
-                    {% endif %}
-                </td>
-                <td>Rp {{ '{:,.0f}'.format(item.subtotal) }}</td>
-                <td>
-                    {# Kondisi untuk menyembunyikan tombol remove dari cart untuk admin #}
-                    {% if current_user.is_authenticated and current_user.role == 'admin' %}
-                        N/A
-                    {% else %}
-                        <form action="{{ url_for('cart.remove_from_cart', cart_id=item.id) }}" method="POST" class="d-inline">
-                            <button type="submit" class="btn btn-sm btn-danger" title="Remove Item"><i class="fas fa-trash-alt"></i></button>
-                        </form>
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-
-<div class="row justify-content-end">
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Cart Summary</h5>
-                <p class="card-text">Total Item Price: Rp {{ '{:,.0f}'.format(total_price) }}</p>
-                <p class="card-text">Total Weight: {{ '{:,.2f}'.format(total_weight) }} kg</p>
-                <hr>
-                {# Kondisi untuk menyembunyikan tombol "Proceed to Checkout" dan "Clear Cart" untuk admin #}
-                {% if current_user.is_authenticated and current_user.role == 'admin' %}
-                    <div class="alert alert-info text-center">Admin tidak dapat melanjutkan ke checkout.</div>
-                {% else %}
-                    <a href="{{ url_for('orders.checkout') }}" class="btn btn-success w-100">Proceed to Checkout</a>
-                    <form action="{{ url_for('cart.clear_cart') }}" method="POST" class="mt-2">
-                        <button type="submit" class="btn btn-outline-secondary w-100">Clear Cart</button>
+                </div>
+                 {% if not (current_user.is_authenticated and current_user.role == 'admin') %}
+                <div class="card-footer bg-light d-flex justify-content-between align-items-center py-3">
+                    <a href="{{ url_for('products.product_list') }}" class="btn btn-outline-secondary">
+                        <i class="fa fa-arrow-left"></i> Lanjut Belanja
+                    </a>
+                    <form action="{{ url_for('cart.clear_cart') }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin mengosongkan keranjang?');">
+                        <button type="submit" class="btn btn-outline-danger">
+                            <i class="fa fa-trash"></i> Kosongkan Keranjang
+                        </button>
                     </form>
+                </div>
                 {% endif %}
             </div>
         </div>
+
+        {# Kolom Kanan: Ringkasan Keranjang #}
+        <div class="col-lg-4">
+            <div class="card shadow-sm sticky-top" style="top: calc(var(--body-padding-top, 70px) + 1.5rem);"> {# Membuatnya sticky #}
+                <div class="card-header bg-light py-3">
+                    <h5 class="mb-0">Ringkasan Belanja</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            Subtotal Produk
+                            <span class="fw-bold">Rp {{ '{:,.0f}'.format(total_price) }}</span>
+                        </li>
+                        {# Informasi berat total, sesuai permintaan Anda untuk tidak ada cost shipping di sini #}
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0 text-muted">
+                            <small>Total Berat</small>
+                            <small>{{ '{:,.2f}'.format(total_weight) }} kg</small>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center fw-bold px-0 py-3 border-top mt-2">
+                            Total Pembayaran
+                            <span style="font-size: 1.2rem; color: var(--petshop-green-primary);">Rp {{ '{:,.0f}'.format(total_price) }}</span>
+                        </li>
+                    </ul>
+
+                    {% if not (current_user.is_authenticated and current_user.role == 'admin') %}
+                    <div class="d-grid mt-3">
+                        <a href="{{ url_for('orders.checkout') }}" class="btn btn-lg btn-block" style="background-color: var(--petshop-green-primary); border-color: var(--petshop-green-primary); color: white; font-weight: 500;">
+                            Lanjutkan ke Checkout <i class="fa fa-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info text-center mt-3">Admin tidak dapat melanjutkan ke checkout.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
     </div>
-</div>
 
-{% else %}
-<div class="alert alert-info text-center" role="alert">
-    Your cart is empty. <a href="{{ url_for('main.home') }}">Start shopping!</a> {# Ubah products.product_list ke main.home jika itu rute utama #}
-</div>
-{% endif %}
+    {% else %}
+    <div class="text-center py-5">
+        <i class="fa fa-shopping-cart fa-5x text-muted mb-3"></i>
+        <h3 class="mb-3">Keranjang Belanja Anda Kosong</h3>
+        <p class="text-muted">Sepertinya Anda belum menambahkan produk apapun ke keranjang.</p>
+        <a href="{{ url_for('main.home') }}" class="btn mt-3" style="background-color: var(--petshop-green-primary); border-color: var(--petshop-green-primary); color: white;">
+            <i class="fa fa-home"></i> Mulai Belanja Sekarang
+        </a>
+    </div>
+    {% endif %}
 
+</div>
+{% endblock %}
+
+{% block scripts_page %}
+<script>
+// Jika Anda ingin AJAX untuk update kuantitas atau hapus item, tambahkan di sini.
+// Untuk saat ini, form akan melakukan submit standar.
+// Contoh untuk auto-submit pada perubahan kuantitas (jika tidak menggunakan tombol update terpisah):
+// document.querySelectorAll('input[name="quantity"]').forEach(function(input) {
+//     input.addEventListener('change', function() {
+//         this.form.submit();
+//     });
+// });
+</script>
 {% endblock %}

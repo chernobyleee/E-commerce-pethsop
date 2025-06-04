@@ -1,113 +1,145 @@
-{% extends 'base.html' %}
+{% extends 'base.html' %} {# Pastikan ini adalah base.html yang sudah terintegrasi dengan Famms #}
 
-{% block title %}Checkout{% endblock %}
+{% block title %}Checkout - PetShopin{% endblock %}
+
+{% block page_title %}Proses Checkout{% endblock %} {# Untuk inner_page_head di base.html #}
 
 {% block content %}
-<h1 class="mb-4">Checkout</h1>
+<div class="container checkout-page py-4">
+    {# Judul halaman sudah diurus oleh inner_page_head dari base.html jika tidak dikomentari di sana #}
+    {# <h1 class="text-center mb-4 display-5" style="font-weight: 600;">Checkout</h1> #}
 
-{% if not cart_items %}
-<div class="alert alert-warning text-center" role="alert">
-    Your cart is empty. Please add items before checking out. <a href="{{ url_for('products.product_list') }}">Go to Products</a>
-</div>
-{% else %}
-<form method="POST" action="{{ url_for('orders.checkout') }}" id="checkoutForm"> {# Tambahkan ID form #}
-    <div class="row">
-        <div class="col-md-6">
-            <h3>Informasi Penerima</h3>
-            <div class="mb-3">
-                <label for="receiver_name" class="form-label">Nama Penerima</label>
-                <input type="text" class="form-control" id="receiver_name" name="receiver_name" value="{{ current_user.name }}" required>
-            </div>
-            <div class="mb-3">
-                <label for="receiver_phone" class="form-label">Nomor Telepon</label>
-                <input type="text" class="form-control" id="receiver_phone" name="receiver_phone" value="{{ current_user.phone_number or '' }}" required>
-            </div>
+    {% include '_messages.html' %} {# Untuk menampilkan flash messages #}
 
-            <div class="mb-3">
-                <label for="address_keyword" class="form-label">Cari Lokasi (Provinsi, Kota, Kecamatan, Kelurahan)</label>
-                <input type="text" class="form-control" id="address_keyword" placeholder="Ketik minimal 3 karakter untuk mencari..." required>
-                <div id="search_results" class="list-group mt-2">
-                </div>
-            </div>
-
-            {# Hidden fields yang akan diisi oleh JavaScript #}
-            <input type="hidden" id="receiver_destination_id" name="receiver_destination_id" value="" required>
-            <input type="hidden" id="province_name" name="province_name" value="">
-            <input type="hidden" id="city_name" name="city_name" value="">
-            <input type="hidden" id="district_name" name="district_name" value="">
-            <input type="hidden" id="subdistrict_name" name="subdistrict_name" value="">
-            <input type="hidden" id="zip_code" name="zip_code" value="">
-
-            <div class="mb-3">
-                <label for="receiver_address" class="form-label">Alamat Lengkap (Jalan, Nomor Rumah, RT/RW, Patokan)</label>
-                <textarea class="form-control" id="receiver_address" name="receiver_address" rows="3" required></textarea>
-            </div>
-        </div>
-
-        <div class="col-md-6">
-            <h3>Rincian Pesanan</h3>
-            <ul class="list-group mb-3">
-                {% for item in cart_items %}
-                <li class="list-group-item d-flex justify-content-between lh-sm">
-                    <div>
-                        <h6 class="my-0">{{ item.product.name }} (x{{ item.quantity }})</h6>
-                        <small class="text-muted">{{ item.product.weight * item.quantity }} gram</small>
-                    </div>
-                    <span class="text-muted">Rp {{ '{:,.0f}'.format(item.quantity * item.product.price) }}</span>
-                </li>
-                {% endfor %}
-                <li class="list-group-item d-flex justify-content-between">
-                    <span>Total Item Price</span>
-                    <strong>Rp <span id="total_items_price">{{ '{:,.0f}'.format(total_price) }}</span></strong>
-                </li>
-                <li class="list-group-item d-flex justify-content-between">
-                    <span>Total Weight</span>
-                    <strong>{{ '{:,.2f}'.format(total_weight_kg) }} kg</strong>
-                </li>
-            </ul>
-
-            <h3>Opsi Pengiriman</h3>
-            <div id="shipping_options_container" class="mb-3">
-                <p>Pilih alamat pengiriman di samping untuk melihat opsi pengiriman JNE.</p>
-            </div>
-
-            {# Hidden fields untuk kurir, diisi oleh JavaScript setelah pemilihan kurir #}
-            <input type="hidden" id="courier_code" name="courier_code" value="JNE" required> {# JNE hardcoded jika hanya itu kurir yang disupport #}
-            <input type="hidden" id="courier_service" name="courier_service" value="" required>
-            <input type="hidden" id="courier_estimate" name="courier_estimate" value="">
-            <input type="hidden" id="courier_cost" name="courier_cost" value="0" required>
-
-            <div class="card mt-3">
-                <div class="card-body">
-                    <h5 class="card-title">Ringkasan Pembayaran</h5>
-                    <ul class="list-group list-group-flush">
-                        <li class="list-group-item d-flex justify-content-between">
-                            Item Total:
-                            <span>Rp {{ '{:,.0f}'.format(total_price) }}</span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between">
-                            Biaya Pengiriman:
-                            <span>Rp <span id="shipping_cost_display">0</span></span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between fw-bold">
-                            Total Pembayaran:
-                            <span>Rp <span id="grand_total_display">{{ '{:,.0f}'.format(total_price) }}</span></span>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-
-            <button type="submit" class="btn btn-primary btn-lg w-100 mt-4">Lanjutkan Pembayaran</button>
-        </div>
+    {% if not cart_items %}
+    <div class="text-center py-5 my-5">
+        <i class="fa fa-shopping-cart fa-4x text-muted mb-3" style="color: #ccc !important;"></i>
+        <h3 class="mb-3">Keranjang Belanja Anda Kosong</h3>
+        <p class="text-muted lead">Anda tidak bisa melanjutkan ke checkout karena tidak ada item di keranjang.</p>
+        <a href="{{ url_for('products.product_list') }}" class="btn btn-lg mt-3" style="background-color: var(--petshop-green-primary); border-color: var(--petshop-green-primary); color: white;">
+            <i class="fa fa-shopping-bag"></i> Kembali Belanja
+        </a>
     </div>
-</form>
-{% endif %}
+    {% else %}
+    <form method="POST" action="{{ url_for('orders.checkout') }}" id="checkoutForm">
+        <div class="row g-4"> {# g-4 untuk gutter/jarak antar kolom #}
+            {# Kolom Kiri: Informasi Penerima dan Opsi Pengiriman #}
+            <div class="col-lg-7">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white py-3">
+                        <h5 class="mb-0"><i class="fa fa-user-circle-o me-2" style="color: var(--petshop-green-primary);"></i>Informasi Penerima</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="receiver_name" class="form-label">Nama Penerima <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control form-control-sm" id="receiver_name" name="receiver_name" value="{{ current_user.name if current_user.is_authenticated else '' }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="receiver_phone" class="form-label">Nomor Telepon <span class="text-danger">*</span></label>
+                            <input type="tel" class="form-control form-control-sm" id="receiver_phone" name="receiver_phone" value="{{ current_user.phone_number if current_user.is_authenticated else '' }}" placeholder="Contoh: 08123456789" required>
+                        </div>
+                        <hr class="my-4">
+                        <h6 class="mb-3">Alamat Pengiriman</h6>
+                        <div class="mb-3">
+                            <label for="address_keyword" class="form-label">Cari Lokasi Pengiriman <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control form-control-sm" id="address_keyword" placeholder="Ketik min. 3 karakter (Kelurahan/Kecamatan/Kota/Provinsi)" required>
+                            <div id="search_results" class="list-group mt-1 position-absolute w-100" style="z-index: 1000; max-height: 200px; overflow-y: auto;">
+                                {# Hasil pencarian alamat akan muncul di sini oleh JavaScript #}
+                            </div>
+                        </div>
+
+                        {# Hidden fields untuk detail alamat yang dipilih #}
+                        <input type="hidden" id="receiver_destination_id" name="receiver_destination_id" value="{{ request.form.receiver_destination_id or '' }}" required>
+                        <input type="hidden" id="province_name" name="province_name" value="{{ request.form.province_name or '' }}">
+                        <input type="hidden" id="city_name" name="city_name" value="{{ request.form.city_name or '' }}">
+                        <input type="hidden" id="district_name" name="district_name" value="{{ request.form.district_name or '' }}">
+                        <input type="hidden" id="subdistrict_name" name="subdistrict_name" value="{{ request.form.subdistrict_name or '' }}">
+                        <input type="hidden" id="zip_code" name="zip_code" value="{{ request.form.zip_code or '' }}">
+
+                        <div class="mb-3">
+                            <label for="receiver_address" class="form-label">Alamat Lengkap (Nama Jalan, No. Rumah, RT/RW, Detail Tambahan) <span class="text-danger">*</span></label>
+                            <textarea class="form-control form-control-sm" id="receiver_address" name="receiver_address" rows="3" placeholder="Contoh: Jl. Kenangan Indah No. 10, RT 01/RW 05, Sebelah Masjid Al-Amin" required>{{ request.form.receiver_address or '' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white py-3">
+                        <h5 class="mb-0"><i class="fa fa-truck me-2" style="color: var(--petshop-green-primary);"></i>Opsi Pengiriman</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="shipping_options_container">
+                            <p class="text-muted">Pilih alamat pengiriman di atas untuk melihat opsi pengiriman JNE.</p>
+                            {# Opsi pengiriman akan dimuat di sini oleh JavaScript #}
+                        </div>
+                        {# Hidden fields untuk data kurir yang dipilih #}
+                        <input type="hidden" id="courier_code" name="courier_code" value="jne" required> {# Default JNE atau sesuai pilihan #}
+                        <input type="hidden" id="courier_service" name="courier_service" value="{{ request.form.courier_service or '' }}" required>
+                        <input type="hidden" id="courier_estimate" name="courier_estimate" value="{{ request.form.courier_estimate or '' }}">
+                        <input type="hidden" id="courier_cost" name="courier_cost" value="{{ request.form.courier_cost or '0' }}" required>
+                    </div>
+                </div>
+            </div>
+
+            {# Kolom Kanan: Rincian Pesanan & Ringkasan Pembayaran #}
+            <div class="col-lg-5">
+                <div class="card shadow-sm border-0 sticky-top" style="top: calc(var(--body-padding-top, 75px) + 20px);">
+                    <div class="card-header bg-white py-3">
+                        <h5 class="mb-0"><i class="fa fa-list-alt me-2" style="color: var(--petshop-green-primary);"></i>Rincian Pesanan</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush">
+                            {% for item in cart_items %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">
+                                <div class="d-flex align-items-center">
+                                    <img src="{{ item.product.image_url if item.product.image_url else url_for('static', filename='famms_template/images/p1.png') }}" 
+                                         alt="{{ item.product.name }}" 
+                                         class="img-fluid rounded me-2" 
+                                         style="width: 45px; height: 45px; object-fit: contain;">
+                                    <div>
+                                        <span class="d-block" style="font-size: 0.85rem;">{{ item.product.name }}</span>
+                                        <small class="text-muted">x {{ item.quantity }}</small>
+                                    </div>
+                                </div>
+                                <span style="font-size: 0.85rem;">Rp {{ '{:,.0f}'.format(item.quantity * item.product.price) }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <div class="card-footer bg-white pt-3 pb-0 border-top-0">
+                        <ul class="list-group list-group-flush">
+                             <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                <span>Subtotal Produk</span>
+                                <span>Rp <span id="total_items_price_display">{{ '{:,.0f}'.format(total_price) }}</span></span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                <span>Biaya Pengiriman</span>
+                                <span>Rp <span id="shipping_cost_display">0</span></span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center fw-bold px-0 pt-3 mt-2 border-top">
+                                <span style="font-size: 1.1rem;">Total Pembayaran</span>
+                                <span style="font-size: 1.3rem; color: var(--petshop-green-primary);">Rp <span id="grand_total_display">{{ '{:,.0f}'.format(total_price) }}</span></span>
+                            </li>
+                        </ul>
+                         <div class="d-grid mt-4 mb-3">
+                            <button type="submit" class="btn btn-lg btn-block" style="background-color: var(--petshop-green-primary); border-color: var(--petshop-green-primary); color: white; font-weight: 600;">
+                                Lanjutkan Pembayaran <i class="fa fa-arrow-right ms-1"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+    {% endif %}
+</div>
 {% endblock %}
 
-{% block scripts %}
+{% block scripts_page %}
+{# Ambil JavaScript dari file checkout.html Anda yang lama #}
 <script>
-    let currentTotalItemsPrice = {{ total_price }};
-    let currentTotalWeightKg = {{ total_weight_kg }};
+    let currentTotalItemsPrice = parseFloat({{ total_price }}); // Pastikan ini angka
+    let currentTotalWeightKg = parseFloat({{ total_weight_kg }}); // Pastikan ini angka
     let currentShippingCost = 0;
 
     const addressKeywordInput = document.getElementById('address_keyword');
@@ -120,109 +152,118 @@
     const districtNameInput = document.getElementById('district_name');
     const subdistrictNameInput = document.getElementById('subdistrict_name');
     const zipCodeInput = document.getElementById('zip_code');
+    
+    const courierCodeInput = document.getElementById('courier_code'); // Sudah ada di form
     const courierServiceInput = document.getElementById('courier_service');
     const courierEstimateInput = document.getElementById('courier_estimate');
     const courierCostInput = document.getElementById('courier_cost');
 
+    const totalItemsPriceDisplay = document.getElementById('total_items_price_display'); // Untuk subtotal produk
     const shippingCostDisplay = document.getElementById('shipping_cost_display');
     const grandTotalDisplay = document.getElementById('grand_total_display');
 
     let debounceTimer;
 
-    // Tambahkan event listener untuk form submit
-    document.getElementById('checkoutForm').addEventListener('submit', function(event) {
-        // Log nilai-nilai hidden input sebelum submit
-        console.log('Submitting form...');
-        console.log('receiver_destination_id:', receiverDestinationIdInput.value);
-        console.log('province_name:', provinceNameInput.value);
-        console.log('city_name:', cityNameInput.value);
-        console.log('district_name:', districtNameInput.value);
-        console.log('subdistrict_name:', subdistrictNameInput.value);
-        console.log('zip_code:', zipCodeInput.value);
-        console.log('courier_code:', courierCodeInput.value); // Pastikan ini juga ada
-        console.log('courier_service:', courierServiceInput.value);
-        console.log('courier_estimate:', courierEstimateInput.value);
-        console.log('courier_cost:', courierCostInput.value);
+    // Fungsi untuk memformat angka ke Rupiah
+    function formatRupiah(amount) {
+        return new Intl.NumberFormat('id-ID').format(amount);
+    }
 
-        // Validasi tambahan di frontend sebelum submit jika diperlukan
-        if (!receiverDestinationIdInput.value || !courierServiceInput.value || courierCostInput.value === '0') {
-            alert('Mohon lengkapi semua data pengiriman dan pilih kurir.');
-            event.preventDefault(); // Mencegah form disubmit
+    // Fungsi untuk mengupdate tampilan total
+    function updateGrandTotal() {
+        const grandTotal = currentTotalItemsPrice + currentShippingCost;
+        if (totalItemsPriceDisplay) totalItemsPriceDisplay.textContent = formatRupiah(currentTotalItemsPrice);
+        if (shippingCostDisplay) shippingCostDisplay.textContent = formatRupiah(currentShippingCost);
+        if (grandTotalDisplay) grandTotalDisplay.textContent = formatRupiah(grandTotal);
+    }
+    
+    // Fungsi untuk mereset field pengiriman
+    function resetShippingFields(resetDestination = true) {
+        if (resetDestination) {
+            if(receiverDestinationIdInput) receiverDestinationIdInput.value = '';
+            if(provinceNameInput) provinceNameInput.value = '';
+            if(cityNameInput) cityNameInput.value = '';
+            if(districtNameInput) districtNameInput.value = '';
+            if(subdistrictNameInput) subdistrictNameInput.value = '';
+            if(zipCodeInput) zipCodeInput.value = '';
         }
-    });
+        if(courierServiceInput) courierServiceInput.value = '';
+        if(courierEstimateInput) courierEstimateInput.value = '';
+        if(courierCostInput) courierCostInput.value = '0';
+        currentShippingCost = 0;
+        if(shippingOptionsContainer) shippingOptionsContainer.innerHTML = '<p class="text-muted small">Pilih lokasi pengiriman untuk melihat opsi dan biaya.</p>';
+        updateGrandTotal();
+    }
 
+    // Event listener untuk input pencarian alamat
+    if (addressKeywordInput) {
+        addressKeywordInput.addEventListener('keyup', function() {
+            clearTimeout(debounceTimer);
+            const keyword = this.value.trim();
+            
+            if (keyword.length < 3) {
+                if(searchResultsDiv) searchResultsDiv.innerHTML = '';
+                if(shippingOptionsContainer) shippingOptionsContainer.innerHTML = '<p class="text-muted small">Ketik minimal 3 karakter untuk mencari lokasi.</p>';
+                resetShippingFields(); // Reset jika keyword kurang dari 3
+                return;
+            }
 
-    addressKeywordInput.addEventListener('keyup', function() {
-        clearTimeout(debounceTimer);
-        const keyword = this.value.trim();
-        if (keyword.length < 3) {
-            searchResultsDiv.innerHTML = '';
-            shippingOptionsContainer.innerHTML = '<p>Pilih alamat pengiriman di samping untuk melihat opsi pengiriman JNE.</p>';
-            resetShippingFields(); // Reset all related fields
-            updateGrandTotal();
-            return;
-        }
+            if(searchResultsDiv) searchResultsDiv.innerHTML = '<div class="list-group-item small">Mencari...</div>';
 
-        debounceTimer = setTimeout(() => {
-            fetch(`/orders/api/search-location?keyword=${encodeURIComponent(keyword)}`)
-                .then(response => response.json())
-                .then(data => {
-                    searchResultsDiv.innerHTML = '';
-                    if (data.success && data.destinations.length > 0) {
-                        data.destinations.forEach(dest => {
-                            const item = document.createElement('a');
-                            item.href = '#';
-                            item.classList.add('list-group-item', 'list-group-item-action');
-                            item.textContent = dest.name;
-                            item.dataset.id = dest.id;
-                            item.dataset.province = dest.province; 
-                            item.dataset.city = dest.city;
-                            item.dataset.district = dest.district;
-                            item.dataset.subdistrict = dest.subdistrict;
-                            item.dataset.zipcode = dest.zip_code;
-                            item.addEventListener('click', function(e) {
-                                e.preventDefault();
-                                // Set hidden fields
-                                receiverDestinationIdInput.value = this.dataset.id;
-                                provinceNameInput.value = this.dataset.province;
-                                cityNameInput.value = this.dataset.city;
-                                districtNameInput.value = this.dataset.district;
-                                subdistrictNameInput.value = this.dataset.subdistrict;
-                                zipCodeInput.value = this.dataset.zipcode;
-                                addressKeywordInput.value = this.textContent; // Set input display
-                                searchResultsDiv.innerHTML = ''; // Clear results
-
-                                // Calculate shipping cost for selected destination
-                                calculateShippingCost(this.dataset.id);
+            debounceTimer = setTimeout(() => {
+                fetch(`{{ url_for('orders.api_search_location') }}?keyword=${encodeURIComponent(keyword)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if(searchResultsDiv) searchResultsDiv.innerHTML = ''; // Bersihkan hasil sebelumnya
+                        if (data.success && data.destinations && data.destinations.length > 0) {
+                            data.destinations.forEach(dest => {
+                                const item = document.createElement('a');
+                                item.href = '#';
+                                item.classList.add('list-group-item', 'list-group-item-action', 'list-group-item-light', 'py-2', 'px-3', 'small');
+                                item.textContent = dest.name; // dest.name adalah full address
+                                item.dataset.id = dest.id;
+                                item.dataset.province = dest.province; 
+                                item.dataset.city = dest.city;
+                                item.dataset.district = dest.district;
+                                item.dataset.subdistrict = dest.subdistrict;
+                                item.dataset.zipcode = dest.zip_code;
+                                item.addEventListener('click', function(e) {
+                                    e.preventDefault();
+                                    if(receiverDestinationIdInput) receiverDestinationIdInput.value = this.dataset.id;
+                                    if(provinceNameInput) provinceNameInput.value = this.dataset.province;
+                                    if(cityNameInput) cityNameInput.value = this.dataset.city;
+                                    if(districtNameInput) districtNameInput.value = this.dataset.district;
+                                    if(subdistrictNameInput) subdistrictNameInput.value = this.dataset.subdistrict;
+                                    if(zipCodeInput) zipCodeInput.value = this.dataset.zipcode;
+                                    if(addressKeywordInput) addressKeywordInput.value = this.textContent;
+                                    if(searchResultsDiv) searchResultsDiv.innerHTML = '';
+                                    calculateShippingCost(this.dataset.id);
+                                });
+                                if(searchResultsDiv) searchResultsDiv.appendChild(item);
                             });
-                            searchResultsDiv.appendChild(item);
-                        });
-                    } else {
-                        searchResultsDiv.innerHTML = '<div class="list-group-item">Tidak ditemukan.</div>';
-                        shippingOptionsContainer.innerHTML = '<p>Pilih alamat pengiriman di samping untuk melihat opsi pengiriman JNE.</p>';
-                        resetShippingFields(); // Reset all related fields
-                        updateGrandTotal();
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching search results:', error);
-                    searchResultsDiv.innerHTML = '<div class="list-group-item text-danger">Error loading results.</div>';
-                    shippingOptionsContainer.innerHTML = '<p class="text-danger">Pilih alamat pengiriman di samping untuk melihat opsi pengiriman JNE.</p>';
-                    resetShippingFields(); // Reset all related fields
-                    updateGrandTotal();
-                });
-        }, 500);
-    });
+                        } else {
+                            if(searchResultsDiv) searchResultsDiv.innerHTML = '<div class="list-group-item small">Lokasi tidak ditemukan.</div>';
+                            if(shippingOptionsContainer) shippingOptionsContainer.innerHTML = '<p class="text-muted small">Lokasi tidak ditemukan, tidak dapat menghitung ongkir.</p>';
+                            resetShippingFields(false); // Jangan reset destination ID jika keyword valid tapi tidak ada hasil
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching search results:', error);
+                        if(searchResultsDiv) searchResultsDiv.innerHTML = '<div class="list-group-item text-danger small">Error memuat hasil pencarian.</div>';
+                        resetShippingFields();
+                    });
+            }, 600); // Delay debounce
+        });
+    }
 
+    // Fungsi untuk menghitung biaya pengiriman
     function calculateShippingCost(destinationId) {
-        shippingOptionsContainer.innerHTML = '<p>Memuat opsi pengiriman...</p>';
-        resetShippingFields(false); // Jangan reset destination ID saat menghitung ongkir
+        if(shippingOptionsContainer) shippingOptionsContainer.innerHTML = '<div class="text-center p-3"><div class="spinner-border spinner-border-sm text-secondary" role="status"><span class="visually-hidden">Memuat...</span></div> <small class="text-muted ms-2">Memuat opsi pengiriman...</small></div>';
+        resetShippingFields(false); 
 
-        fetch(`/orders/api/calculate-shipping`, {
+        fetch(`{{ url_for('orders.api_calculate_shipping') }}`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 receiver_destination_id: destinationId,
                 total_weight_kg: currentTotalWeightKg,
@@ -231,75 +272,86 @@
         })
         .then(response => response.json())
         .then(data => {
-            if (data.success && data.rates.length > 0) {
-                let optionsHtml = '<div class="mb-3">';
-                optionsHtml += '<label class="form-label">Pilih Layanan Pengiriman JNE:</label>';
+            if(shippingOptionsContainer) shippingOptionsContainer.innerHTML = ''; // Bersihkan loading
+            if (data.success && data.rates && data.rates.length > 0) {
+                let optionsHtml = '<small class="form-label d-block mb-2 fw-bold">Pilih Layanan Pengiriman (JNE):</small>';
                 data.rates.forEach(rate => {
+                    // Pastikan service_code ada dan unik untuk ID radio button
+                    const serviceCodeId = (rate.service_code || rate.service_name.replace(/\s+/g, '')).toLowerCase();
                     optionsHtml += `
-                        <div class="form-check">
+                        <div class="form-check mb-2 border rounded p-2">
                             <input class="form-check-input shipping-radio" type="radio" name="shipping_option"
-                                   id="shipping_${rate.service_code}" value="${rate.service_code}"
+                                   id="shipping_${serviceCodeId}" value="${rate.service_code}"
                                    data-service="${rate.service_name}"
-                                   data-estimate="${rate.estimate_delivery_time}"
+                                   data-estimate="${rate.estimate_delivery_time || 'N/A'}"
                                    data-cost="${rate.cost}" required>
-                            <label class="form-check-label" for="shipping_${rate.service_code}">
-                                ${rate.service_name} (${rate.estimate_delivery_time}): Rp ${formatRupiah(rate.cost)}
+                            <label class="form-check-label w-100" for="shipping_${serviceCodeId}" style="font-size: 0.9rem;">
+                                <div class="d-flex justify-content-between">
+                                    <span><strong>${rate.service_name}</strong> <small class="text-muted">(${rate.estimate_delivery_time || 'N/A'})</small></span>
+                                    <span class="fw-bold">Rp ${formatRupiah(rate.cost)}</span>
+                                </div>
                             </label>
                         </div>
                     `;
                 });
-                optionsHtml += '</div>';
                 shippingOptionsContainer.innerHTML = optionsHtml;
 
                 document.querySelectorAll('.shipping-radio').forEach(radio => {
                     radio.addEventListener('change', function() {
-                        courierServiceInput.value = this.dataset.service;
-                        courierEstimateInput.value = this.dataset.estimate;
-                        courierCostInput.value = this.dataset.cost;
+                        if(courierServiceInput) courierServiceInput.value = this.dataset.service;
+                        if(courierEstimateInput) courierEstimateInput.value = this.dataset.estimate;
+                        if(courierCostInput) courierCostInput.value = this.dataset.cost;
                         currentShippingCost = parseFloat(this.dataset.cost);
                         updateGrandTotal();
                     });
                 });
-
             } else {
-                shippingOptionsContainer.innerHTML = `<p class="text-danger">Tidak ada opsi pengiriman JNE yang tersedia: ${data.error || 'Terjadi kesalahan'}.</p>`;
-                resetShippingFields(false); // Jangan reset destination ID saat ongkir gagal
+                if(shippingOptionsContainer) shippingOptionsContainer.innerHTML = `<p class="text-danger small">${data.error || 'Tidak ada opsi pengiriman JNE yang tersedia untuk lokasi ini.'}</p>`;
+                resetShippingFields(false);
             }
-            updateGrandTotal();
+            updateGrandTotal(); // Panggil lagi untuk memastikan
         })
         .catch(error => {
             console.error('Error fetching shipping cost:', error);
-            shippingOptionsContainer.innerHTML = '<p class="text-danger">Error memuat biaya pengiriman. Coba lagi nanti.</p>';
-            resetShippingFields(false); // Jangan reset destination ID saat ongkir gagal
+            if(shippingOptionsContainer) shippingOptionsContainer.innerHTML = '<p class="text-danger small">Error memuat biaya pengiriman. Coba lagi nanti.</p>';
+            resetShippingFields(false);
         });
     }
 
-    function updateGrandTotal() {
-        const grandTotal = currentTotalItemsPrice + currentShippingCost;
-        shippingCostDisplay.textContent = formatRupiah(currentShippingCost);
-        grandTotalDisplay.textContent = formatRupiah(grandTotal);
+    // Event listener untuk form submit (validasi akhir)
+    const checkoutForm = document.getElementById('checkoutForm');
+    if (checkoutForm) {
+        checkoutForm.addEventListener('submit', function(event) {
+            console.log('Submitting checkout form...');
+            // Validasi tambahan di frontend sebelum submit
+            if (!receiverDestinationIdInput.value) {
+                alert('Mohon pilih lokasi pengiriman dari hasil pencarian.');
+                event.preventDefault();
+                addressKeywordInput.focus();
+                return;
+            }
+            if (!courierServiceInput.value || parseFloat(courierCostInput.value) < 0 ) { // Biaya bisa 0 jika gratis ongkir
+                 // Cek apakah ada radio button yang terpilih
+                const selectedShippingRadio = document.querySelector('.shipping-radio:checked');
+                if (!selectedShippingRadio) {
+                    alert('Mohon pilih layanan pengiriman.');
+                    event.preventDefault();
+                    // Fokus ke area opsi pengiriman jika ada
+                    if(shippingOptionsContainer.querySelector('input[type="radio"]')) {
+                        shippingOptionsContainer.querySelector('input[type="radio"]').focus();
+                    }
+                    return;
+                }
+            }
+            // Tombol submit di-disable setelah diklik untuk mencegah double submission
+            const submitButton = checkoutForm.querySelector('button[type="submit"]');
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Memproses...';
+            }
+        });
     }
-
-    // Tambahkan parameter `resetDestination`
-    function resetShippingFields(resetDestination = true) {
-        if (resetDestination) {
-            receiverDestinationIdInput.value = '';
-            provinceNameInput.value = '';
-            cityNameInput.value = '';
-            districtNameInput.value = '';
-            subdistrictNameInput.value = '';
-            zipCodeInput.value = '';
-        }
-        courierServiceInput.value = '';
-        courierEstimateInput.value = '';
-        courierCostInput.value = '0'; // Penting: set kembali ke '0' bukan 0
-        currentShippingCost = 0;
-    }
-
-    function formatRupiah(amount) {
-        return new Intl.NumberFormat('id-ID').format(amount);
-    }
-
-    updateGrandTotal(); // Initial update when page loads
+    // Panggil updateGrandTotal saat halaman dimuat untuk menginisialisasi tampilan
+    updateGrandTotal();
 </script>
 {% endblock %}

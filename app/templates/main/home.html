@@ -1,29 +1,252 @@
-{% extends 'base.html' %}
+{% extends 'base.html' %} {# Pastikan ini nama base template Anda yang sudah dimodifikasi #}
 
-{% block title %}Welcome to PetShop!{% endblock %}
+{% block title %}Selamat Datang di PetShopin!{% endblock %}
+
+{# Kosongkan page_title karena homepage menggunakan slider besar, bukan inner_page_head standar #}
+{% block page_title %}{% endblock %}
+
+{# Isi blok top_content_section dengan slider dari template Famms #}
+{% block top_content_section %}
+    {# hero_area div membungkus slider, sesuai struktur template Famms untuk homepage #}
+    {# Karena header sudah fixed-top di base.html, hero_area ini akan berada di bawahnya #}
+    <div class="hero_area"> 
+        <section class="slider_section ">
+            <div class="slider_bg_box">
+                {# Pastikan path ke gambar slider-bg.jpg benar dan file ada di static #}
+                <img src="{{ url_for('static', filename='famms_template/images/slider-bg-2.png') }}" alt="Promo Spesial PetShopin">
+            </div>
+            <div id="customCarousel1" class="carousel slide" data-ride="carousel">
+                <div class="carousel-inner">
+                    {# Slide 1 - Sesuaikan teksnya #}
+                    <div class="carousel-item active">
+                        <div class="container ">
+                            <div class="row">
+                                <div class="col-md-7 col-lg-6 ">
+                                    <div class="detail-box">
+                                        <h1>
+                                            <span>
+                                            Manjakan Hewan Peliharaan
+                                            </span>
+                                            <br>
+                                            Kesayangan anda!
+                                        </h1>
+                                        <p>
+                                            Manjakan sahabat setia Anda dengan produk berkualitas terbaik. Dapatkan penawaran spesial hanya di PetShopin. Stok terbatas, jangan sampai kehabisan!
+                                        </p>
+                                        <div class="btn-box">
+                                            <a href="{{ url_for('products.product_list') }}" class="btn1">
+                                            Belanja Sekarang
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {# Slide 2 - Contoh #}
+                    <div class="carousel-item">
+                        <div class="container ">
+                            <div class="row">
+                                <div class="col-md-7 col-lg-6 ">
+                                    <div class="detail-box">
+                                        <h1>
+                                            <span>
+                                            Produk Baru Tiba!
+                                            </span>
+                                            <br>
+                                            Kebutuhan Hewan Peliharaan Terlengkap
+                                        </h1>
+                                        <p>
+                                            Temukan berbagai pilihan makanan bernutrisi, mainan seru, aksesoris lucu, dan perlengkapan perawatan terbaru untuk anjing, kucing, dan hewan peliharaan lainnya.
+                                        </p>
+                                        <div class="btn-box">
+                                            <a href="{{ url_for('products.product_list') }}" class="btn1">
+                                            Lihat Koleksi Baru
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {# Slide 3 - Contoh #}
+                    <div class="carousel-item">
+                        <div class="container ">
+                            <div class="row">
+                                <div class="col-md-7 col-lg-6 ">
+                                    <div class="detail-box">
+                                        <h1>
+                                            <span>
+                                            Layanan Terbaik Kami
+                                            </span>
+                                            <br>
+                                            Untuk Sahabat Setia Anda
+                                        </h1>
+                                        <p>
+                                            Kami di PetShopin berkomitmen memberikan produk original dan layanan pelanggan terbaik demi kebahagiaan dan kesehatan hewan peliharaan Anda.
+                                        </p>
+                                        <div class="btn-box">
+                                            {# Ganti dengan url_for yang sesuai jika ada halaman kontak #}
+                                            <a href="#" class="btn1"> 
+                                            Hubungi Kami
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="container">
+                    <ol class="carousel-indicators">
+                        <li data-target="#customCarousel1" data-slide-to="0" class="active"></li>
+                        <li data-target="#customCarousel1" data-slide-to="1"></li>
+                        <li data-target="#customCarousel1" data-slide-to="2"></li>
+                    </ol>
+                </div>
+            </div>
+        </section>
+    </div>
+{% endblock top_content_section %}
 
 {% block content %}
-<div class="p-5 mb-4 bg-light rounded-3">
-    <div class="container-fluid py-5 text-center">
-        <h1 class="display-5 fw-bold">Welcome to PetShop!</h1>
-        <p class="col-md-8 fs-4 mx-auto">Find the best products for your beloved pets.</p>
-        <a href="{{ url_for('products.product_list') }}" class="btn btn-primary btn-lg" type="button">Shop Now!</a>
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-6">
-        <h2>About Us</h2>
-        <p>PetShop is your one-stop shop for all your pet needs. We offer a wide range of high-quality products for dogs, cats, birds, and more. Our mission is to provide the best for your furry friends.</p>
-    </div>
-    <div class="col-md-6">
-        <h2>Our Services</h2>
-        <ul>
-            <li>Premium Pet Food</li>
-            <li>Toys & Accessories</li>
-            <li>Grooming Supplies</li>
-            <li>Health & Wellness Products</li>
-        </ul>
-    </div>
-</div>
-{% endblock %}
+    {# Konten lain untuk halaman utama bisa dimulai di sini, di luar hero_area #}
+    {# Contoh: "Why Shop With Us" section #}
+    <section class="why_section layout_padding">
+        <div class="container">
+        <div class="heading_container heading_center">
+            <h2>
+                Kenapa Berbelanja di PetShopin?
+            </h2>
+        </div>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="box ">
+                    <div class="img-box">
+                    <i class="fa fa-truck fa-3x" style="color: var(--petshop-green-primary);" aria-hidden="true"></i>
+                    </div>
+                    <div class="detail-box">
+                    <h5>
+                        Pengiriman Cepat & Aman
+                    </h5>
+                    <p>
+                        Pesanan Anda kami antar dengan cepat dan aman sampai ke depan pintu rumah Anda di area Ciampea dan sekitarnya.
+                    </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="box ">
+                    <div class="img-box">
+                    <i class="fa fa-shield fa-3x" style="color: var(--petshop-green-primary);" aria-hidden="true"></i>
+                    </div>
+                    <div class="detail-box">
+                    <h5>
+                        Produk Terjamin & Original
+                    </h5>
+                    <p>
+                        Kami hanya menyediakan produk asli dari merek terpercaya untuk kesehatan dan kebahagiaan hewan peliharaan Anda.
+                    </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="box ">
+                    <div class="img-box">
+                    <i class="fa fa-thumbs-up fa-3x" style="color: var(--petshop-green-primary);" aria-hidden="true"></i>
+                    </div>
+                    <div class="detail-box">
+                    <h5>
+                        Kualitas Pelayanan Terbaik
+                    </h5>
+                    <p>
+                        Staf kami siap membantu Anda memilih produk terbaik dan memberikan solusi untuk kebutuhan Hewan Peliharaan Anda.
+                    </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+    </section>
+    <section class="arrival_section">
+        <div class="container">
+        <div class="box">
+            <div class="arrival_bg_box">
+                <img src="{{ url_for('static', filename='famms_template/images/arrival-bg-3.png') }}" alt="Produk Baru PetShopin">
+            </div>
+            <div class="row">
+                <div class="col-md-6 ml-auto">
+                    <div class="heading_container remove_line_bt">
+                    <h2>
+                        #ProdukBaruDatang
+                    </h2>
+                    </div>
+                    <p style="margin-top: 20px;margin-bottom: 30px;">
+                        Selalu ada yang baru di PetShopin! Cek koleksi terbaru kami, mulai dari makanan favorit, mainan edukatif, hingga aksesoris lucu untuk membuat hari Hewan Peliharaan Anda semakin ceria.
+                    </p>
+                    <a href="{{ url_for('products.product_list', sort_by='newest') }}"> 
+                    Lihat Sekarang
+                    </a>
+                </div>
+            </div>
+        </div>
+        </div>
+    </section>
+    <section class="product_section layout_padding">
+        <div class="container">
+        <div class="heading_container heading_center">
+            <h2>
+                Produk <span>Unggulan</span>
+            </h2>
+        </div>
+        <div class="row">
+            {% if products and products.items %}
+                {% for product in products.items %} {# Loop melalui products.items #}
+                <div class="col-sm-6 col-md-4 col-lg-3"> {# Ubah ke col-lg-3 untuk 4 produk per baris di layar besar #}
+                    <div class="box">
+                        <div class="option_container">
+                        <div class="options">
+                            <a href="{{ url_for('products.product_detail', product_id=product.id) }}" class="option1">
+                                Lihat Detail
+                            </a>
+                            <form action="{{ url_for('cart.add_to_cart') }}" method="POST" style="display:inline;">
+                                <input type="hidden" name="product_id" value="{{ product.id }}">
+                                <input type="hidden" name="quantity" value="1">
+                                <button type="submit" class="option2">Tambah Keranjang</button> {# Ubah teks tombol #}
+                            </form>
+                        </div>
+                        </div>
+                        <div class="img-box" style="height: 200px; display: flex; align-items: center; justify-content: center;"> {# Atur tinggi dan alignment untuk gambar produk #}
+                            <a href="{{ url_for('products.product_detail', product_id=product.id if product.slug is none else product.slug) }}">
+                                <img src="{{ product.image_url if product.image_url else url_for('static', filename='famms_template/images/p1.png') }}" alt="{{ product.name }}" style="max-height: 100%; max-width:100%; object-fit: contain;">
+                            </a>
+                        </div>
+                        <div class="detail-box" style="padding-top: 15px; text-align: center;"> {# Penyesuaian padding dan alignment #}
+                            <h5 style="font-size: 0.8rem; margin-bottom: 0.5rem; height: 3em; overflow: hidden;"> {# Batasi tinggi nama produk #}
+                                <a href="{{ url_for('products.product_detail', product_id=product.id if product.slug is none else product.slug) }}" title="{{ product.name }}" style="color: #333; text-decoration: none;">
+                                    {{ product.name | truncate(50, True) }} {# Perpanjang truncate sedikit #}
+                                </a>
+                            </h5>
+                            <h6 style="font-size: 0.8rem; color: var(--petshop-green-primary); font-weight: bold;">
+                                Rp {{ '{:,.0f}'.format(product.price) }}
+                            </h6>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="col-12">
+                    <p class="text-center">Produk unggulan akan segera hadir! Cek kembali nanti.</p>
+                </div>
+            {% endif %}
+        </div>
+        {% if products and products.items and products.pages > 1 %} {# Tampilkan jika ada produk & lebih dari 1 halaman #}
+        <div class="btn-box">
+            <a href="{{ url_for('products.product_list') }}">
+            Lihat Semua Produk
+            </a>
+        </div>
+        {% endif %}
+        </div>
+    </section>
+    {% endblock %}

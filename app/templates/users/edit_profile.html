@@ -1,19 +1,94 @@
-{% extends "base.html" %}
-{% import "macros/_form_helpers.html" as form_helpers %} {# Ini sudah ada #}
+{% extends 'base.html' %} {# Pastikan ini adalah base.html yang sudah terintegrasi Famms #}
+{% import "macros/_form_helpers.html" as form_helpers %}
+
+{% block title %}Edit Profil - PetShopin{% endblock %}
+
+{% block page_title %}Edit Profil Anda{% endblock %} {# Judul untuk inner_page_head di base.html #}
+
+{% block head_extra %}
+<style>
+    .edit-profile-page .card {
+        margin-top: 1rem; /* Sedikit jarak dari inner_page_head jika ada */
+        border: 1px solid #e9ecef;
+        box-shadow: 0 .1rem .3rem rgba(0,0,0,.075)!important;
+    }
+    .edit-profile-page .card-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+        font-weight: 500;
+        font-size: 1.1rem;
+        color: var(--navbar-text-color);
+    }
+    .edit-profile-page .form-label { /* Styling untuk label dari macro Anda */
+        font-weight: 500;
+        font-size: 0.9rem;
+        margin-bottom: .3rem;
+    }
+    .edit-profile-page .form-control, /* Styling untuk input dari macro Anda */
+    .edit-profile-page .form-select {
+        font-size: 0.95rem;
+        /* form-control-sm bisa membuat input terlalu kecil, jadi kita atur manual */
+        /* Jika macro Anda menambahkan 'form-control-sm', Anda mungkin perlu override di sini atau di macro */
+    }
+    .edit-profile-page .btn-submit-profile {
+        background-color: var(--petshop-green-primary);
+        border-color: var(--petshop-green-primary);
+        color: white;
+        font-weight: 500;
+        padding: 0.5rem 1.25rem; /* Padding tombol lebih pas */
+    }
+    .edit-profile-page .btn-submit-profile:hover {
+        background-color: var(--petshop-green-darker);
+        border-color: var(--petshop-green-darker);
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-    <div class="container mt-5">
-        <h1>Edit Profile</h1>
-        <form method="POST" action="">
-            {{ form.hidden_tag() }}
+<div class="container edit-profile-page py-4">
+    {# Judul utama halaman bisa juga ditampilkan di sini jika inner_page_head tidak digunakan untuk halaman ini #}
+    {# <h2 class="text-center mb-4">Edit Profil Anda</h2> #}
 
-            {{ form_helpers.render_field(form.name) }}
-            {{ form_helpers.render_field(form.email) }}
-            {{ form_helpers.render_field(form.phone_number) }}
+    {% include '_messages.html' %} {# Untuk menampilkan flash messages #}
 
-            <div class="form-group mt-3">
-                {{ form.submit(class="btn btn-primary") }}
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-7">
+            <div class="card shadow-sm border-0">
+                <div class="card-header text-center">
+                   <i class="fa fa-pencil-square-o me-2" style="color: var(--petshop-green-primary);"></i> Ubah Informasi Profil
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" action="{{ url_for('users.edit_profile') }}">
+                        {{ form.hidden_tag() }} {# Untuk CSRF token dan field hidden lainnya #}
+
+                        {# Asumsi macro render_field menghasilkan struktur dengan div.mb-3, label, dan input #}
+                        <div class="mb-3">
+                            {{ form_helpers.render_field(form.name, class="form-control", placeholder="Nama Lengkap Anda") }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form_helpers.render_field(form.email, class="form-control", placeholder="Alamat Email") }}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form_helpers.render_field(form.phone_number, class="form-control", placeholder="Nomor Telepon (Contoh: 0812xxxx)") }}
+                        </div>
+                        
+                        {# Jika Anda memiliki field untuk alamat di form UserProfileForm, tambahkan di sini #}
+                        {# <div class="mb-3">
+                            {{ form_helpers.render_field(form.address, class="form-control", rows="3", placeholder="Alamat Lengkap Anda") }}
+                        </div> #}
+                        
+                        <hr class="my-4">
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('users.profile') }}" class="btn btn-outline-secondary">Batal</a>
+                            {{ form.submit(class="btn btn-submit-profile") }}
+                        </div>
+                    </form>
+                </div>
             </div>
-        </form>
+        </div>
     </div>
+</div>
 {% endblock %}

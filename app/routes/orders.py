@@ -4,6 +4,7 @@ from flask_login import current_user, login_required
 from datetime import datetime, timedelta
 import uuid
 from decimal import Decimal
+from app.forms import CancellationRequestForm
 
 # Import models
 from app.models.order import Order
@@ -422,6 +423,10 @@ def order_detail(order_id):
         price = Decimal(str(detail.price)) if not isinstance(detail.price, Decimal) else detail.price
         quantity = Decimal(str(detail.quantity)) if not isinstance(detail.quantity, Decimal) else detail.quantity
         subtotal += price * quantity
+    
+    cancellation_form = None
+    if order.can_request_cancellation(): # Hanya buat form jika bisa request cancel
+        cancellation_form = CancellationRequestForm(order_id=order.id) # Pre-fill order_id jika perlu
             
     shipment = order.shipment 
 
@@ -491,7 +496,8 @@ def order_detail(order_id):
                            shipment=shipment,
                            tracking_history=tracking_history, # Bisa None, atau dict
                            tracking_error=tracking_error,
-                           show_receive_button=show_receive_button)
+                           show_receive_button=show_receive_button,
+                           cancellation_form=cancellation_form)
 
 # --- Route untuk menandai pesanan diterima ---
 @orders_bp.route('/order/<string:order_id>/mark_as_received', methods=['POST'])
@@ -553,29 +559,42 @@ def cancel_unpaid_order(order_id):
         flash('Pesanan ini tidak dapat dibatalkan pada tahap ini.', 'warning')
         return redirect(url_for('orders.order_detail', order_id=order.id))
 
-@orders_bp.route('/order/<string:order_id>/request_cancellation', methods=['POST'])
+@orders_bp.route('/<string:order_id>/request_cancellation', methods=['POST'])
 @login_required
-@customer_required
 def request_cancellation(order_id):
     order = Order.query.filter_by(id=order_id, user_id=current_user.id).first_or_404()
+    
+    # Buat instance form (tidak perlu di-pass ke template karena ini hanya POST)
+    form = CancellationRequestForm() 
 
-    # Bisa dibatalkan jika statusnya 'processing' (artinya sudah dibayar, menunggu dikirim)
-    # DAN belum ada nomor resi / belum dikirim
-    if order.status == 'processing' and (not order.shipment or not order.shipment.tracking_number):
+    if not order.can_request_cancellation(): # Gunakan metode dari model
+        flash('Pesanan ini tidak dapat diminta pembatalan saat ini.', 'warning')
+        return redirect(url_for('orders.order_detail', order_id=order.id))
+
+    if form.validate_on_submit(): # Validasi form alasan
         try:
-            order.status = 'cancelled' # Atau 'pending_refund', 'cancelled_by_customer'
-            order.payment_status = 'refund_requested' # Tambahkan status ini jika perlu untuk tracking admin
-            order.cancelled_at = datetime.utcnow()
-
-            restock_order_items(order) # Kembalikan stok
-
+            order.status = 'cancellation_requested' # Status baru
+            order.cancellation_reason = form.reason.data
+            order.cancellation_requested_at = datetime.utcnow()
+            # Anda mungkin juga ingin mengubah payment_status tertentu di sini jika relevan
+            # Misalnya, jika sudah 'paid' dan minta batal, mungkin status pembayaran jadi 'pending_refund_approval'
+            
             db.session.commit()
-            flash('Permintaan pembatalan pesanan Anda berhasil. Admin akan segera menghubungi Anda via WhatsApp untuk proses pengembalian dana.', 'success')
+            flash('Permintaan pembatalan Anda telah dikirim dan akan ditinjau oleh admin.', 'success')
+            # Kirim notifikasi ke admin di sini jika perlu (misalnya via email atau sistem notifikasi internal)
         except Exception as e:
             db.session.rollback()
-            current_app.logger.error(f"Error requesting cancellation for order {order.id}: {str(e)}")
-            flash('Terjadi kesalahan saat membatalkan pesanan. Coba lagi.', 'danger')
+            flash(f'Terjadi kesalahan saat mengirim permintaan pembatalan: {str(e)}', 'danger')
+            current_app.logger.error(f"Error requesting cancellation for order {order.id}: {e}")
     else:
-        flash('Pesanan ini sudah dikirim atau tidak dapat dibatalkan pada tahap ini.', 'warning')
-    
+        # Jika validasi form gagal, tampilkan errornya.
+        # Karena ini dari modal, mungkin lebih baik jika validasi terjadi di sisi klien atau 
+        # jika error, redirect kembali ke order_detail dengan pesan error.
+        for field, errors in form.errors.items():
+            for error in errors:
+                flash(f"Error pada field '{getattr(form, field).label.text}': {error}", 'danger')
+        # Jika ada error validasi form, mungkin lebih baik tidak redirect atau redirect dengan parameter
+        # agar modal bisa ditampilkan kembali dengan error. Namun, ini lebih kompleks.
+        # Untuk kesederhanaan, kita redirect saja dengan flash message.
+        
     return redirect(url_for('orders.order_detail', order_id=order.id))
